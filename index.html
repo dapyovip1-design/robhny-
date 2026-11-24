@@ -81,6 +81,12 @@
                     </div>
                 </div>
 
+                <!-- أيقونة الجرس للإشعارات -->
+                <button onclick="openNotificationsModal()" class="relative bg-gray-800 hover:bg-gray-700 border border-gray-700 px-3 py-2 rounded-xl text-sm font-bold transition flex items-center cursor-pointer">
+                    🔔
+                    <span id="notif-badge" class="hidden absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full"></span>
+                </button>
+
                 <span id="user-balance" class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-3 py-1.5 rounded-xl text-xs font-bold">0 نقطة</span>
             </div>
             
@@ -115,7 +121,7 @@
             </div>
         </div>
 
-        <!-- قسم المحفظة والسحب (مضاف تحته خانة الملاحظات) -->
+        <!-- قسم المحفظة والسحب -->
         <div id="view-wallet" class="hidden glass p-5 rounded-2xl space-y-4">
             <div class="flex justify-between items-center">
                 <h3 class="text-sm font-bold text-white">💳 طلب سحب الأرباح</h3>
@@ -216,7 +222,7 @@
             <div class="glass p-5 rounded-2xl border border-purple-500/30 space-y-3">
                 <h3 class="text-sm font-bold text-purple-400">👥 إدارة المستخدمين (رصيد وحظر)</h3>
                 <div id="admin-users-list" class="space-y-2 max-h-72 overflow-y-auto">
-                    <p class="text-xs text-gray-400 text-center">لا توجد مستخدمين مسجلين</p>
+                    <p class="text-xs text-gray-400 text-center">جاري تحميل المستخدمين...</p>
                 </div>
             </div>
 
@@ -239,6 +245,17 @@
                 <button onclick="submitProof()" class="flex-1 bg-emerald-500 text-black font-bold py-2.5 rounded-xl text-xs cursor-pointer">إرسال للمراجعة</button>
                 <button onclick="closeProofModal()" class="flex-1 bg-gray-800 text-gray-300 font-bold py-2.5 rounded-xl text-xs cursor-pointer">إلغاء</button>
             </div>
+        </div>
+    </div>
+
+    <!-- نافذة الإشعارات -->
+    <div id="notifications-modal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
+        <div class="glass w-full max-w-sm p-5 rounded-2xl space-y-3 border border-emerald-500/40">
+            <h3 class="text-sm font-bold text-emerald-400">🔔 إشعارات الحساب</h3>
+            <div id="notifications-list" class="space-y-2 max-h-60 overflow-y-auto">
+                <p class="text-xs text-gray-400 text-center py-4">لا توجد إشعارات جديدة</p>
+            </div>
+            <button onclick="closeNotificationsModal()" class="w-full bg-gray-800 text-gray-300 font-bold py-2.5 rounded-xl text-xs cursor-pointer">إغلاق</button>
         </div>
     </div>
 
@@ -303,6 +320,15 @@
 
         function toggleMenuDropdown() {
             document.getElementById('menu-dropdown').classList.toggle('hidden');
+        }
+
+        function openNotificationsModal() {
+            document.getElementById('notifications-modal').classList.remove('hidden');
+            document.getElementById('notif-badge').classList.add('hidden');
+        }
+
+        function closeNotificationsModal() {
+            document.getElementById('notifications-modal').classList.add('hidden');
         }
 
         window.onclick = function(event) {
@@ -383,7 +409,6 @@
 
             await loadTasks();
 
-            // إذا كان المستخدم هو الأدمن، أظهر له زر لوحة الأدمن في القائمة المنسدلة (☰)
             if (user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
                 document.getElementById('dropdown-admin-btn').classList.remove('hidden');
                 document.getElementById('setting-rate').value = siteSettings.points_per_dollar;
@@ -392,7 +417,7 @@
                 await loadAdminData();
             }
 
-            // الاستماع اللحظي لتحديثات الرصيد أو الحظر
+            // الاستماع اللحظي لتحديثات الرصيد أو الحظر والإشعارات
             supabaseClient
                 .channel('public:profiles:id=eq.' + user.id)
                 .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'profiles', filter: 'id=eq.' + user.id }, payload => {
@@ -404,17 +429,22 @@
                         const diff = newProfile.balance - currentBalance;
                         currentBalance = newProfile.balance;
                         updateBalanceUI();
-                        if (diff > 0) {
-                            alert(`🎉 مبروك! تمت إضافة ${diff} نقطة إلى حسابك من إحدى المهام.`);
-                        } else if (diff < 0) {
-                            alert(`⚠️ تنبيه: تم خصم ${Math.abs(diff)} نقطة من حسابك بسبب الغش أو عدم صحة الإثبات!`);
+                        if (diff !== 0) {
+                            const notifList = document.getElementById('notifications-list');
+                            if (notifList.innerHTML.includes('لا توجد إشعارات')) notifList.innerHTML = '';
+                            
+                            const msgText = diff > 0 ? `🎉 مبروك! تمت إضافة ${diff} نقطة إلى رصيدك.` : `⚠️ تنبيه: تم خصم ${Math.abs(diff)} نقطة من رصيدك.`;
+                            notifList.innerHTML += `<div class="bg-gray-900 p-2.5 rounded-xl border border-gray-800 text-xs text-gray-200">${msgText}</div>`;
+                            document.getElementById('notif-badge').classList.remove('hidden');
+                            
+                            if (diff > 0) alert(`🎉 مبروك! تمت إضافة ${diff} نقطة إلى حسابك.`);
+                            else alert(`⚠️ تنبيه: تم خصم ${Math.abs(diff)} نقطة من حسابك.`);
                         }
                     }
                 })
                 .subscribe();
         }
 
-        // دوال التنقل بين صفحات الأدمن والمستخدم
         function openAdminPage() {
             document.getElementById('app-section').classList.add('hidden');
             document.getElementById('admin-section').classList.remove('hidden');
@@ -567,7 +597,6 @@
             const newBalance = currentBalance - amount;
             await supabaseClient.from('profiles').update({ balance: newBalance }).eq('id', currentUser.id);
 
-            // دمج رقم المحفظة مع الملاحظة لتظهر للأدمن بوضوح
             const fullWalletInfo = note ? `${wallet} - ملاحظة: ${note}` : wallet;
 
             const { error } = await supabaseClient
