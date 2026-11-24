@@ -31,7 +31,7 @@
                 <h1 class="text-3xl font-black text-emerald-400">⚡ ربحني</h1>
                 <p class="text-xs text-gray-400 mt-1">أكمل المهام وقدم إثبات التنفيذ واسحب أرباحك</p>
             </div>
-            <form id="auth-form" class="space-y-4">
+            <form id="auth-form" class="space-y-4" onsubmit="event.preventDefault();">
                 <div>
                     <label class="block text-xs text-gray-400 mb-1">البريد الإلكتروني</label>
                     <input type="email" id="auth-email" required placeholder="example@gmail.com" class="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-sm text-white focus:border-emerald-500 outline-none text-left" dir="ltr">
@@ -323,22 +323,30 @@
         let selectedTaskForProof = null;
         let siteSettings = { points_per_dollar: 1000, min_withdraw: 1000, max_withdraw: 50000 };
 
+        // فحص الجلسة فور فتح الصفحة بأمان تام
         window.onload = async () => {
-            await fetchSettings();
-            const { data: { session } } = await supabaseClient.auth.getSession();
-            if (session && session.user) {
-                await initUser(session.user);
+            try {
+                await fetchSettings();
+                const { data: { session }, error } = await supabaseClient.auth.getSession();
+                if (error) throw error;
+                
+                if (session && session.user) {
+                    await initUser(session.user);
+                } else {
+                    document.getElementById('auth-section').classList.remove('hidden');
+                }
+            } catch (err) {
+                console.error("Auth session error:", err);
+                document.getElementById('auth-section').classList.remove('hidden');
             }
         };
 
         function toggleMenuDropdown() {
-            const dropdown = document.getElementById('menu-dropdown');
-            dropdown.classList.toggle('hidden');
+            document.getElementById('menu-dropdown').classList.toggle('hidden');
         }
 
         function toggleAdminMenuDropdown() {
-            const dropdown = document.getElementById('admin-menu-dropdown');
-            dropdown.classList.toggle('hidden');
+            document.getElementById('admin-menu-dropdown').classList.toggle('hidden');
         }
 
         window.onclick = function(event) {
@@ -432,7 +440,7 @@
                 await loadAdminData();
             }
 
-            // الاستماع اللحظي بأمان تام للمستخدم الحالي فقط
+            // تفعيل الاستماع اللحظي للرصيد
             try {
                 supabaseClient.removeChannel(supabaseClient.channel('profile-changes-' + user.id));
             } catch(e){}
@@ -906,12 +914,4 @@
             const newBal = currentBal + reward;
 
             await supabaseClient.from('profiles').update({ balance: newBal }).eq('id', userId);
-            await supabaseClient.from('task_submissions').update({ status: 'approved' }).eq('id', subId);
-            
-            await sendNotificationToUser(userId, `🎉 مبروك! تم قبول إثبات المهمة وإضافة ${reward} نقطة لرصيدك.`);
-
-            alert(`✅ تم قبول الإثبات وإضافة ${reward} نقطة لرصيد المستخدم بنجاح!`);
-            await loadAdminData();
-        }
-
-        async function modifyUserBalance(userId, oldBal, change) 
+            await supabaseClient.from('tas
