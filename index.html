@@ -467,12 +467,15 @@
                 })
                 .subscribe();
 
-            // الاستماع اللحظي للإشعارات الجديدة لتنبيج الجرس فوراً
+            // الاستماع اللحظي للإشعارات الجديدة وتحديث القائمة والجرس فوراً
             supabaseClient
                 .channel('public:notifications:user_id=eq.' + user.id)
                 .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: 'user_id=eq.' + user.id }, payload => {
                     document.getElementById('notif-badge').classList.remove('hidden');
-                    fetchUserNotifications();
+                    const modal = document.getElementById('notifications-modal');
+                    if (modal && !modal.classList.contains('hidden')) {
+                        fetchUserNotifications();
+                    }
                 })
                 .subscribe();
         }
