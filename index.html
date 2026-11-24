@@ -248,7 +248,7 @@
         </div>
     </div>
 
-    <!-- نافذة الإشعارات -->
+    <!-- نافذة الإشعارات (مع زر تحديث يدوي لضمان ظهور الرسائل على الموبايل) -->
     <div id="notifications-modal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
         <div class="glass w-full max-w-sm p-5 rounded-2xl space-y-3 border border-emerald-500/40">
             <div class="flex justify-between items-center">
@@ -256,7 +256,7 @@
                 <button onclick="fetchUserNotifications()" class="bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 text-[10px] font-bold px-2.5 py-1 rounded-lg cursor-pointer">🔄 تحديث</button>
             </div>
             <div id="notifications-list" class="space-y-2 max-h-60 overflow-y-auto">
-                <p class="text-xs text-gray-400 text-center py-4">جاري التحميل...</p>
+                <p class="text-xs text-gray-400 text-center py-4">لا توجد إشعارات جديدة</p>
             </div>
             <button onclick="closeNotificationsModal()" class="w-full bg-gray-800 text-gray-300 font-bold py-2.5 rounded-xl text-xs cursor-pointer">إغلاق</button>
         </div>
@@ -353,31 +353,22 @@
         }
 
         async function fetchUserNotifications() {
-            // جلب المستخدم الحالي لو غير موجود في المتغير العام
             if (!currentUser) {
                 const { data: { session } } = await supabaseClient.auth.getSession();
                 if (session && session.user) {
                     currentUser = session.user;
                 } else {
-                    document.getElementById('notifications-list').innerHTML = '<p class="text-xs text-gray-400 text-center py-4">يرجى تسجيل الدخول أولاً</p>';
                     return;
                 }
             }
 
-            const notifList = document.getElementById('notifications-list');
-            notifList.innerHTML = '<p class="text-xs text-gray-400 text-center py-4">جاري تحميل الإشعارات...</p>';
-
-            const { data: notifs, error } = await supabaseClient
+            const { data: notifs } = await supabaseClient
                 .from('notifications')
                 .select('*')
                 .eq('user_id', currentUser.id)
                 .order('created_at', { ascending: false });
 
-            if (error) {
-                notifList.innerHTML = `<p class="text-xs text-red-400 text-center py-4">خطأ في التحميل: ${error.message}</p>`;
-                return;
-            }
-
+            const notifList = document.getElementById('notifications-list');
             if (notifs && notifs.length > 0) {
                 notifList.innerHTML = '';
                 notifs.forEach(n => {
@@ -487,15 +478,12 @@
                 })
                 .subscribe();
 
-            // الاستماع اللحظي للإشعارات الجديدة وتحديث القائمة والجرس فوراً
+            // الاستماع اللحظي للإشعارات الجديدة لتنبيج الجرس فوراً
             supabaseClient
                 .channel('public:notifications:user_id=eq.' + user.id)
                 .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: 'user_id=eq.' + user.id }, payload => {
                     document.getElementById('notif-badge').classList.remove('hidden');
-                    const modal = document.getElementById('notifications-modal');
-                    if (modal && !modal.classList.contains('hidden')) {
-                        fetchUserNotifications();
-                    }
+                    fetchUserNotifications();
                 })
                 .subscribe();
         }
@@ -919,4 +907,18 @@
             }
         }
 
-        function close
+        function closeBanModal() {
+            document.getElementById('ban-modal').classList.add('hidden');
+        }
+
+        async function confirmBanUser() {
+            const userId = document.getElementById('ban-user-id').value;
+            const reason = document.getElementById('ban-reason-input').value.trim() || 'مخالفة شروط الاستخدام';
+            closeBanModal();
+            await toggleBanUser(userId, true, reason);
+        }
+
+        async function toggleBanUser(userId, newStatus, reason) {
+            const { error } = await supabaseClient.from('profiles').update({ is_banned: newStatus, ban_reason: reason }).eq('id', userId);
+            if (error) {
+                aler
