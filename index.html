@@ -248,7 +248,7 @@
         </div>
     </div>
 
-    <!-- نافذة الإشعارات (مع زر تحديث يدوي لضمان العمل على الموبايل) -->
+    <!-- نافذة الإشعارات -->
     <div id="notifications-modal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
         <div class="glass w-full max-w-sm p-5 rounded-2xl space-y-3 border border-emerald-500/40">
             <div class="flex justify-between items-center">
@@ -353,6 +353,7 @@
         }
 
         async function fetchUserNotifications() {
+            // جلب المستخدم الحالي لو غير موجود في المتغير العام
             if (!currentUser) {
                 const { data: { session } } = await supabaseClient.auth.getSession();
                 if (session && session.user) {
@@ -373,7 +374,7 @@
                 .order('created_at', { ascending: false });
 
             if (error) {
-                notifList.innerHTML = `<p class="text-xs text-red-400 text-center py-4">خطأ: ${error.message}</p>`;
+                notifList.innerHTML = `<p class="text-xs text-red-400 text-center py-4">خطأ في التحميل: ${error.message}</p>`;
                 return;
             }
 
@@ -918,5 +919,4 @@
             }
         }
 
-        function closeBanModal() {
-            documen
+        function close
