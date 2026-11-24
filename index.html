@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ربحني - منصة المهام والعروض الشاملة</title>
+    <title>ربحني - لوحة التحكم الشاملة</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Supabase JS Client -->
@@ -39,7 +39,7 @@
         <!-- Auth Section -->
         <div id="auth-section" class="glass p-6 rounded-2xl shadow-xl">
             <h2 class="text-2xl font-bold text-center mb-2">أهلاً بك في ربحني 🚀</h2>
-            <p class="text-gray-400 text-center text-sm mb-6">اربح يومياً من المهام والعروض، واطلب أرباحك فوراً</p>
+            <p class="text-gray-400 text-center text-sm mb-6">اربح من المهام والعروض، واطلب أرباحك فوراً</p>
             
             <form id="auth-form" onsubmit="handleAuth(event)" class="space-y-4">
                 <div>
@@ -70,7 +70,7 @@
                 <div class="grid grid-cols-3 gap-2 mt-4">
                     <button onclick="switchTab('offers')" id="tab-offers" class="bg-emerald-600 text-black font-bold py-2 rounded-xl text-xs transition">العروض</button>
                     <button onclick="switchTab('tasks')" id="tab-tasks" class="bg-gray-800 text-gray-300 hover:bg-gray-700 font-bold py-2 rounded-xl text-xs transition">المهام</button>
-                    <button onclick="switchTab('wallet')" id="tab-wallet" class="bg-gray-800 text-gray-300 hover:bg-gray-700 font-bold py-2 rounded-xl text-xs transition">المحفظة والسحب</button>
+                    <button onclick="switchTab('wallet')" id="tab-wallet" class="bg-gray-800 text-gray-300 hover:bg-gray-700 font-bold py-2 rounded-xl text-xs transition">المحفظة</button>
                 </div>
             </div>
 
@@ -88,48 +88,47 @@
             <!-- Tab 2: Tasks -->
             <div id="content-tasks" class="hidden space-y-3">
                 <div class="glass p-4 rounded-2xl">
-                    <h3 class="font-bold text-gray-200 mb-3 text-sm">📌 مهام مشاهدة الإعلانات (PTC)</h3>
-                    <div class="space-y-2">
-                        <div class="bg-gray-900/60 p-3 rounded-xl flex justify-between items-center">
-                            <div>
-                                <p class="text-xs font-bold text-gray-200">زيارة موقع الإعلان #1</p>
-                                <span class="text-[10px] text-emerald-400">+10 نقاط (30 ثانية)</span>
-                            </div>
-                            <button onclick="completeTask(10)" class="bg-emerald-500 hover:bg-emerald-600 text-black text-xs font-bold px-3 py-1.5 rounded-lg">زيارة</button>
-                        </div>
-                        <div class="bg-gray-900/60 p-3 rounded-xl flex justify-between items-center">
-                            <div>
-                                <p class="text-xs font-bold text-gray-200">مشاهدة فيديو ترويجي</p>
-                                <span class="text-[10px] text-emerald-400">+15 نقطة</span>
-                            </div>
-                            <button onclick="completeTask(15)" class="bg-emerald-500 hover:bg-emerald-600 text-black text-xs font-bold px-3 py-1.5 rounded-lg">مشاهدة</button>
-                        </div>
+                    <h3 class="font-bold text-gray-200 mb-3 text-sm">📌 مهام الإعلانات والمواقع</h3>
+                    <div id="tasks-list" class="space-y-2">
+                        <p class="text-xs text-gray-400 text-center py-2">جاري تحميل المهام...</p>
                     </div>
                 </div>
             </div>
 
-            <!-- Tab 3: Wallet & Payouts -->
+            <!-- Tab 3: Wallet -->
             <div id="content-wallet" class="hidden space-y-3">
                 <div class="glass p-5 rounded-2xl space-y-3">
                     <h3 class="font-bold text-gray-200 text-sm">💳 طلب سحب الأرباح</h3>
-                    <p class="text-xs text-gray-400">الحد الأدنى للسحب: 1000 نقطة (يتحول فودافون كاش / إنستا باي)</p>
-                    
                     <div class="space-y-2">
                         <input type="text" id="payout-account" placeholder="رقم فودافون كاش أو معرف InstaPay" class="w-full bg-gray-900 border border-gray-800 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-emerald-500">
-                        <input type="number" id="payout-amount" placeholder="عدد النقاط المراد سحبها" class="w-full bg-gray-900 border border-gray-800 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-emerald-500">
+                        <input type="number" id="payout-amount" placeholder="عدد النقاط (الحد الأدنى 1000)" class="w-full bg-gray-900 border border-gray-800 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-emerald-500">
                         <button onclick="requestPayout()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-black font-bold py-2.5 rounded-xl text-xs transition">إرسال طلب السحب</button>
                     </div>
                     <div id="payout-msg" class="text-center text-xs text-emerald-400"></div>
                 </div>
             </div>
 
-            <!-- Admin Panel Section (Appears only for gezo@gmail.com) -->
-            <div id="admin-section" class="hidden glass p-4 rounded-2xl border border-yellow-500/30 mt-4">
-                <h4 class="text-yellow-400 font-bold mb-1 text-sm">👑 لوحة تحكم الأدمن</h4>
-                <p class="text-[11px] text-gray-400 mb-3">مرحباً بك يا باشمهندس، أنت تتحكم بكل بيانات المنصة.</p>
-                <div class="grid grid-cols-2 gap-2">
-                    <button onclick="alert('قسم إدارة المستخدمين وسجل السحب قيد التفعيل')" class="bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-2 rounded-xl text-xs">إدارة المستخدمين</button>
-                    <button onclick="alert('طلبات السحب المعلقة: 0')" class="bg-gray-800 hover:bg-gray-700 text-yellow-400 font-bold py-2 rounded-xl text-xs">طلبات السحب</button>
+            <!-- Admin Panel Section -->
+            <div id="admin-section" class="hidden space-y-4">
+                <!-- Add Task Box -->
+                <div class="glass p-4 rounded-2xl border border-yellow-500/30 space-y-3">
+                    <h4 class="text-yellow-400 font-bold text-sm">👑 إضافة مهمة جديدة للمستخدمين</h4>
+                    <form onsubmit="addNewTask(event)" class="space-y-2">
+                        <input type="text" id="new-task-title" placeholder="عنوان المهمة (مثلاً: تابع صفحتنا)" required class="w-full bg-gray-900 border border-gray-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-yellow-500">
+                        <input type="number" id="new-task-reward" placeholder="النقاط (مثلاً: 25)" required class="w-full bg-gray-900 border border-gray-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-yellow-500">
+                        <input type="url" id="new-task-link" placeholder="رابط المهمة (https://...)" required class="w-full bg-gray-900 border border-gray-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-yellow-500">
+                        <button type="submit" class="w-full bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-2 rounded-xl text-xs transition">نشر المهمة</button>
+                    </form>
+                    <div id="admin-msg" class="text-center text-xs text-yellow-400"></div>
+                </div>
+
+                <!-- Users Management List Box -->
+                <div class="glass p-4 rounded-2xl border border-red-500/30 space-y-3">
+                    <h4 class="text-red-400 font-bold text-sm">👥 قائمة المستخدمين المسجلين (إدارة فورية)</h4>
+                    <p class="text-[11px] text-gray-400">اضغط على أي مستخدم لتعديل رصيده أو حظره مباشرة.</p>
+                    <div id="admin-users-list" class="space-y-2 max-h-60 overflow-y-auto">
+                        <p class="text-xs text-gray-400 text-center py-2">جاري تحميل المستخدمين...</p>
+                    </div>
                 </div>
             </div>
 
@@ -157,9 +156,30 @@
             const { data: { session } } = await supabaseClient.auth.getSession();
             if (session) {
                 currentUser = session.user;
-                showDashboard();
+                await checkBanAndProceed();
             }
         });
+
+        async function checkBanAndProceed() {
+            // التأكد من وجود ملف تعريف للمستخدم أو إنشائه تلقائياً، والتحقق من الحظر
+            let { data: profile } = await supabaseClient
+                .from('profiles')
+                .select('*')
+                .eq('id', currentUser.id)
+                .single();
+
+            if (!profile) {
+                // إنشاء بروفایل للمستخدم الجديد تلقائياً لو مش موجود
+                await supabaseClient.from('profiles').insert([{ id: currentUser.id, email: currentUser.email, balance: 0, is_banned: false }]);
+            } else if (profile.is_banned) {
+                alert('تم حظر حسابك من قبل الإدارة.');
+                await supabaseClient.auth.signOut();
+                location.reload();
+                return;
+            }
+
+            showDashboard();
+        }
 
         function toggleMode() {
             isSignUp = !isSignUp;
@@ -185,6 +205,10 @@
                 if (isSignUp) {
                     const { data, error } = await supabaseClient.auth.signUp({ email, password });
                     if (error) throw error;
+                    // إضافة البروفايل فوراً لقاعدة البيانات
+                    if (data.user) {
+                        await supabaseClient.from('profiles').insert([{ id: data.user.id, email: email, balance: 0, is_banned: false }]);
+                    }
                     alert('تم إنشاء الحساب بنجاح! يمكنك تسجيل الدخول الآن.');
                     isSignUp = false;
                     toggleMode();
@@ -192,7 +216,7 @@
                     const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
                     if (error) throw error;
                     currentUser = data.user;
-                    showDashboard();
+                    await checkBanAndProceed();
                 }
             } catch (err) {
                 errDiv.textContent = 'خطأ: ' + err.message;
@@ -204,17 +228,18 @@
             document.getElementById('user-info').classList.remove('hidden');
             document.getElementById('dashboard-section').classList.remove('hidden');
             
-            // تحقق من حساب الأدمن
             if (currentUser && currentUser.email === 'gezo@gmail.com') {
                 document.getElementById('admin-section').classList.remove('hidden');
+                await loadAdminUsersList();
             }
 
             await fetchBalance();
+            await loadTasks();
         }
 
         async function fetchBalance() {
             if (!currentUser) return;
-            const { data, error } = await supabaseClient
+            const { data } = await supabaseClient
                 .from('profiles')
                 .select('balance')
                 .eq('id', currentUser.id)
@@ -236,18 +261,108 @@
             document.getElementById(`tab-${tab}`).className = 'bg-emerald-600 text-black font-bold py-2 rounded-xl text-xs transition';
         }
 
-        async function completeTask(reward) {
+        async function loadTasks() {
+            const tasksList = document.getElementById('tasks-list');
+            const { data } = await supabaseClient.from('site_tasks').select('*');
+            
+            if (!data || data.length === 0) {
+                tasksList.innerHTML = '<p class="text-xs text-gray-400 text-center py-2">لا توجد مهام متاحة حالياً</p>';
+                return;
+            }
+
+            tasksList.innerHTML = '';
+            data.forEach(task => {
+                tasksList.innerHTML += `
+                    <div class="bg-gray-900/60 p-3 rounded-xl flex justify-between items-center">
+                        <div>
+                            <p class="text-xs font-bold text-gray-200">${task.title}</p>
+                            <span class="text-[10px] text-emerald-400">+${task.reward} نقطة</span>
+                        </div>
+                        <button onclick="completeTask('${task.link}', ${task.reward})" class="bg-emerald-500 hover:bg-emerald-600 text-black text-xs font-bold px-3 py-1.5 rounded-lg">تنفيذ</button>
+                    </div>
+                `;
+            });
+        }
+
+        async function addNewTask(e) {
+            e.preventDefault();
+            const title = document.getElementById('new-task-title').value;
+            const reward = parseInt(document.getElementById('new-task-reward').value);
+            const link = document.getElementById('new-task-link').value;
+            const msg = document.getElementById('admin-msg');
+
+            const { error } = await supabaseClient.from('site_tasks').insert([{ title, reward, link }]);
+            if (error) {
+                msg.textContent = 'خطأ: ' + error.message;
+            } else {
+                msg.textContent = 'تم نشر المهمة بنجاح!';
+                document.getElementById('new-task-title').value = '';
+                document.getElementById('new-task-reward').value = '';
+                document.getElementById('new-task-link').value = '';
+                loadTasks();
+            }
+        }
+
+        // --- تحميل قائمة المستخدمين في لوحة الأدمن ---
+        async function loadAdminUsersList() {
+            const listDiv = document.getElementById('admin-users-list');
+            const { data: users, error } = await supabaseClient.from('profiles').select('*');
+
+            if (!users || users.length === 0) {
+                listDiv.innerHTML = '<p class="text-xs text-gray-400 text-center py-2">لا توجد مستخدمين مسجلين بعد</p>';
+                return;
+            }
+
+            listDiv.innerHTML = '';
+            users.forEach(u => {
+                listDiv.innerHTML += `
+                    <div class="bg-gray-900 p-2.5 rounded-xl space-y-2 border border-gray-800">
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="text-gray-300 font-semibold">${u.email || 'مستخدم بدون إيميل'}</span>
+                            <span class="text-emerald-400 font-bold">${u.balance || 0} نقطة</span>
+                        </div>
+                        <div class="flex gap-1 pt-1">
+                            <button onclick="adminAdjustPoints('${u.id}', 50)" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-[10px] py-1 rounded-lg">+50</button>
+                            <button onclick="adminAdjustPoints('${u.id}', -50)" class="flex-1 bg-orange-600 hover:bg-orange-700 text-white text-[10px] py-1 rounded-lg">-50</button>
+                            <button onclick="adminBanUser('${u.id}')" class="flex-1 bg-red-600 hover:bg-red-700 text-white text-[10px] py-1 rounded-lg">حظر وطرد</button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        async function adminAdjustPoints(userId, amount) {
+            // جلب الرصيد الحالي للمستخدم
+            const { data } = await supabaseClient.from('profiles').select('balance').eq('id', userId).single();
+            if (!data) return;
+
+            const newBalance = (data.balance || 0) + amount;
+            await supabaseClient.from('profiles').update({ balance: newBalance }).eq('id', userId);
+            
+            alert('تم تعديل رصيد المستخدم بنجاح!');
+            loadAdminUsersList();
+        }
+
+        async function adminBanUser(userId) {
+            if (!confirm('هل أنت متأكد من حظر وطرد هذا المستخدم نهائياً؟')) return;
+            
+            await supabaseClient.from('profiles').update({ is_banned: true, balance: 0 }).eq('id', userId);
+            alert('تم حظر المستخدم بنجاح!');
+            loadAdminUsersList();
+        }
+
+        async function completeTask(link, reward) {
+            window.open(link, '_blank');
             currentBalance += reward;
             document.getElementById('user-balance').textContent = currentBalance + ' نقطة';
             document.getElementById('dashboard-balance').textContent = currentBalance;
             
-            // تحديث الرصيد في قاعدة البيانات
             await supabaseClient
                 .from('profiles')
                 .update({ balance: currentBalance })
                 .eq('id', currentUser.id);
 
-            alert(`مبروك! تمت إضافة ${reward} نقطة إلى رصيدك بنجاح.`);
+            alert(`مبروك! تمت إضافة النقاط إلى رصيدك.`);
         }
 
         function requestPayout() {
@@ -255,15 +370,11 @@
             const amt = document.getElementById('payout-amount').value;
             const msg = document.getElementById('payout-msg');
             
-            if (!acc || !amt) {
-                msg.textContent = 'يرجى إدخال تفاصيل الحساب والمبلغ';
+            if (!acc || !amt || amt < 1000) {
+                msg.textContent = 'يرجى التأكد من ادخال البيانات والحد الأدنى (1000 نقطة)';
                 return;
             }
-            if (amt < 1000) {
-                msg.textContent = 'الحد الأدنى للسحب هو 1000 نقطة';
-                return;
-            }
-            msg.textContent = 'تم إرسال طلب السحب بنجاح وسيتم المراجعة والتحويل قريباً!';
+            msg.textContent = 'تم إرسال طلب السحب بنجاح!';
         }
 
         function openOfferwall() {
