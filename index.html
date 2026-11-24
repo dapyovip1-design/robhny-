@@ -248,7 +248,7 @@
         </div>
     </div>
 
-    <!-- نافذة الإشعارات (مع زر التحديث اليدوي) -->
+    <!-- نافذة الإشعارات -->
     <div id="notifications-modal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
         <div class="glass w-full max-w-sm p-5 rounded-2xl space-y-3 border border-emerald-500/40">
             <div class="flex justify-between items-center">
@@ -316,7 +316,7 @@
         window.onload = async () => {
             await fetchSettings();
             const { data: { session } } = await supabaseClient.auth.getSession();
-            if (session) {
+            if (session && session.user) {
                 await initUser(session.user);
             }
         };
@@ -391,16 +391,25 @@
             }
 
             let res;
-            if (type === 'login') {
-                res = await supabaseClient.auth.signInWithPassword({ email, password });
-            } else {
-                res = await supabaseClient.auth.signUp({ email, password });
-            }
+            try {
+                if (type === 'login') {
+                    res = await supabaseClient.auth.signInWithPassword({ email, password });
+                } else {
+                    res = await supabaseClient.auth.signUp({ email, password });
+                }
 
-            if (res.error) {
-                msg.textContent = 'خطأ: ' + res.error.message;
-            } else if (res.data.user) {
-                await initUser(res.data.user);
+                if (res.error) {
+                    msg.textContent = 'خطأ: ' + res.error.message;
+                } else {
+                    const loggedUser = res.data.user || (res.data.session ? res.data.session.user : null);
+                    if (loggedUser) {
+                        await initUser(loggedUser);
+                    } else {
+                        msg.textContent = '⚠️ تم التسجيل، يرجى تسجيل الدخول الآن.';
+                    }
+                }
+            } catch (err) {
+                msg.textContent = 'حدث خطأ غير متوقع: ' + err.message;
             }
         }
 
@@ -645,7 +654,6 @@
 
             const fullWalletInfo = note ? `${wallet} - ملاحظة: ${note}` : wallet;
 
-            // إرسال طلب السحب للأدمن بحالة pending بدون خصم فوري من رصيد المستخدم
             const { error } = await supabaseClient
                 .from('withdrawals')
                 .insert([{ 
@@ -919,12 +927,4 @@
         }
 
         function closeBanModal() {
-            document.getElementById('ban-modal').classList.add('hidden');
-        }
-
-        async function confirmBanUser() {
-            const userId = document.getElementById('ban-user-id').value;
-            const reason = document.getElementById('ban-reason-input').value.trim() || 'مخالفة شروط الاستخدام';
-            closeBanModal();
-            await toggleBanUser(userId, true, reason);
-      
+            document.getElementById('ban-modal').classList.
