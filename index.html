@@ -141,4 +141,362 @@
             </div>
 
             <!-- 3. إدارة المستخدمين (رصيد وحظر) -->
-            <div class="glass p-
+            <div class="glass p-5 rounded-2xl border border-blue-500/30 space-y-3">
+                <h3 class="text-sm font-bold text-blue-400">👥 قائمة المستخدمين المسجلين (إدارة فورية)</h3>
+                <p class="text-[11px] text-gray-400">تحكم في رصيد أي مستخدم أو قم بحظره مباشرة.</p>
+                <div id="admin-users-list" class="space-y-2 max-h-72 overflow-y-auto">
+                    <p class="text-xs text-gray-400 text-center">جاري تحميل المستخدمين...</p>
+                </div>
+            </div>
+
+        </div>
+
+        <footer class="text-center text-[11px] text-gray-500 pt-4">
+            جميع الحقوق محفوظة © 2026 ربحني
+        </footer>
+    </div>
+
+    <script>
+        // ================= إعدادات SUPABASE الخاصة بك =================
+        const SUPABASE_URL = 'https://yreoztmcjylqlaonuadb.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlyZW96dG1janlscWxhb251YWRiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTU1MjYyNjcsImV4cCI6MjExMTEwMjI2N30.4aOPvo2qZK0_iAs1gdekA_3Lqx6yO1v4C1kSB-djM0Y'; 
+        const ADMIN_EMAIL = 'gezo@gmail.com';
+        // ==============================================================
+
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        let currentUser = null;
+        let currentBalance = 0;
+
+        window.onload = async () => {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (session) {
+                await initUser(session.user);
+            }
+        };
+
+        async function handleAuth(type) {
+            const email = document.getElementById('auth-email').value.trim();
+            const password = document.getElementById('auth-password').value.trim();
+            const msg = document.getElementById('auth-msg');
+            msg.textContent = 'جاري المعالجة...';
+
+            if (!email || !password) {
+                msg.textContent = 'يرجى إدخال البريد الإلكتروني وكلمة المرور';
+                return;
+            }
+
+            let res;
+            if (type === 'login') {
+                res = await supabaseClient.auth.signInWithPassword({ email, password });
+            } else {
+                res = await supabaseClient.auth.signUp({ email, password });
+            }
+
+            if (res.error) {
+                msg.textContent = 'خطأ: ' + res.error.message;
+            } else if (res.data.user) {
+                await initUser(res.data.user);
+            }
+        }
+
+        async function initUser(user) {
+            currentUser = user;
+            
+            let { data: profile } = await supabaseClient
+                .from('profiles')
+                .select('*')
+                .eq('id', user.id)
+                .single();
+
+            if (!profile) {
+                const { data: newProfile } = await supabaseClient
+                    .from('profiles')
+                    .insert([{ id: user.id, email: user.email, balance: 0, is_banned: false }])
+                    .select()
+                    .single();
+                profile = newProfile;
+            }
+
+            if (profile && profile.is_banned) {
+                document.getElementById('auth-section').classList.add('hidden');
+                document.getElementById('app-section').classList.add('hidden');
+                document.getElementById('banned-section').classList.remove('hidden');
+                return;
+            }
+
+            currentBalance = profile ? (profile.balance || 0) : 0;
+            updateBalanceUI();
+
+            document.getElementById('auth-section').classList.add('hidden');
+            document.getElementById('app-section').classList.remove('hidden');
+
+            await loadTasks();
+
+            if (user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
+                document.getElementById('admin-panel').classList.remove('hidden');
+                await loadAdminData();
+            }
+        }
+
+        function updateBalanceUI() {
+            document.getElementById('user-balance').textContent = currentBalance + ' نقطة';
+            document.getElementById('dashboard-balance').textContent = currentBalance;
+        }
+
+        function switchTab(tab) {
+            ['wallet', 'tasks', 'offers'].forEach(t => {
+                document.getElementById('view-' + t).classList.add('hidden');
+                const btn = document.getElementById('tab-' + t);
+                btn.classList.remove('bg-emerald-500', 'text-black');
+                btn.classList.add('bg-gray-800', 'text-gray-300');
+            });
+
+            document.getElementById('view-' + tab).classList.remove('hidden');
+            const activeBtn = document.getElementById('tab-' + tab);
+            activeBtn.classList.remove('bg-gray-800', 'text-gray-300');
+            activeBtn.classList.add('bg-emerald-500', 'text-black');
+        }
+
+        async function loadTasks() {
+            const tasksList = document.getElementById('tasks-list');
+            
+            const { data: tasks } = await supabaseClient
+                .from('site_tasks')
+                .select('*')
+                .order('id', { ascending: false });
+
+            const { data: completed } = await supabaseClient
+                .from('completed_site_tasks')
+                .select('task_id')
+                .eq('user_id', currentUser.id);
+
+            const completedIds = completed ? completed.map(c => c.task_id) : [];
+
+            if (!tasks || tasks.length === 0) {
+                tasksList.innerHTML = '<p class="text-xs text-gray-400 text-center py-2">لا توجد مهام متاحة حالياً</p>';
+                return;
+            }
+
+            tasksList.innerHTML = '';
+            let count = 0;
+
+            tasks.forEach(task => {
+                if (completedIds.includes(task.id)) return;
+                count++;
+                tasksList.innerHTML += `
+                    <div id="task-card-${task.id}" class="bg-gray-900/80 p-3.5 rounded-xl flex justify-between items-center border border-gray-800">
+                        <div>
+                            <p class="text-xs font-bold text-gray-100">${task.title}</p>
+                            <span class="text-[11px] text-emerald-400 font-semibold">+${task.reward} نقطة</span>
+                        </div>
+                        <button id="btn-task-${task.id}" onclick="startAndVerifyTask(${task.id}, '${task.link}', ${task.reward})" class="bg-emerald-500 hover:bg-emerald-600 text-black text-xs font-bold px-4 py-2 rounded-xl transition">تنفيذ</button>
+                    </div>
+                `;
+            });
+
+            if (count === 0) {
+                tasksList.innerHTML = '<p class="text-xs text-gray-400 text-center py-3">أكملت جميع المهام المتاحة! عد لاحقاً لمهام جديدة 🔥</p>';
+            }
+        }
+
+        async function startAndVerifyTask(taskId, link, reward) {
+            const btn = document.getElementById(`btn-task-${taskId}`);
+            if (btn.disabled) return;
+
+            window.open(link, '_blank');
+
+            btn.disabled = true;
+            btn.classList.remove('bg-emerald-500', 'text-black');
+            btn.classList.add('bg-amber-500/20', 'text-amber-400');
+
+            let seconds = 5;
+            btn.textContent = `جاري التحقق (${seconds}ث)...`;
+
+            const timer = setInterval(async () => {
+                seconds--;
+                if (seconds > 0) {
+                    btn.textContent = `جاري التحقق (${seconds}ث)...`;
+                } else {
+                    clearInterval(timer);
+                    btn.textContent = 'جاري الإضافة...';
+
+                    const { error: insertErr } = await supabaseClient
+                        .from('completed_site_tasks')
+                        .insert([{ user_id: currentUser.id, task_id: taskId }]);
+
+                    if (!insertErr) {
+                        currentBalance += reward;
+                        await supabaseClient
+                            .from('profiles')
+                            .update({ balance: currentBalance })
+                            .eq('id', currentUser.id);
+
+                        updateBalanceUI();
+                        alert(`مبروك! تم التحقق وإضافة ${reward} نقطة إلى رصيدك.`);
+                        await loadTasks();
+                    } else {
+                        alert('حدث خطأ أثناء تسجيل المهمة، حاول مرة أخرى.');
+                        btn.disabled = false;
+                        btn.textContent = 'تنفيذ';
+                    }
+                }
+            }, 1000);
+        }
+
+        async function requestWithdrawal(e) {
+            e.preventDefault();
+            const wallet = document.getElementById('withdraw-wallet').value.trim();
+            const amount = parseInt(document.getElementById('withdraw-amount').value);
+            const msg = document.getElementById('withdraw-msg');
+            const btn = document.getElementById('withdraw-btn');
+
+            if (isNaN(amount) || amount < 1000) {
+                msg.className = 'text-center text-xs text-red-400 mt-1';
+                msg.textContent = '❌ الحد الأدنى للسحب هو 1000 نقطة!';
+                return;
+            }
+
+            if (amount > currentBalance) {
+                msg.className = 'text-center text-xs text-red-400 mt-1';
+                msg.textContent = `❌ رصيدك الحالي (${currentBalance} نقطة) غير كافٍ لسحب ${amount} نقطة!`;
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = 'جاري إرسال الطلب...';
+
+            const newBalance = currentBalance - amount;
+            const { error: balErr } = await supabaseClient
+                .from('profiles')
+                .update({ balance: newBalance })
+                .eq('id', currentUser.id);
+
+            if (balErr) {
+                msg.className = 'text-center text-xs text-red-400 mt-1';
+                msg.textContent = '❌ حدث خطأ في تحديث الرصيد: ' + balErr.message;
+                btn.disabled = false;
+                btn.textContent = 'إرسال طلب السحب';
+                return;
+            }
+
+            const { error: wErr } = await supabaseClient
+                .from('withdrawals')
+                .insert([{
+                    user_id: currentUser.id,
+                    email: currentUser.email,
+                    wallet_info: wallet,
+                    amount: amount,
+                    status: 'pending'
+                }]);
+
+            if (wErr) {
+                await supabaseClient.from('profiles').update({ balance: currentBalance }).eq('id', currentUser.id);
+                msg.className = 'text-center text-xs text-red-400 mt-1';
+                msg.textContent = '❌ خطأ في إرسال الطلب: ' + wErr.message;
+            } else {
+                currentBalance = newBalance;
+                updateBalanceUI();
+                msg.className = 'text-center text-xs text-emerald-400 mt-1 font-bold';
+                msg.textContent = '✅ تم خصم النقاط وإرسال طلب السحب بنجاح! سيصلك الدفع قريباً.';
+                document.getElementById('withdraw-wallet').value = '';
+                document.getElementById('withdraw-amount').value = '';
+                if (currentUser.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) loadAdminData();
+            }
+
+            btn.disabled = false;
+            btn.textContent = 'إرسال طلب السحب';
+        }
+
+        function openOfferwall() {
+            const offerUrl = `https://www.ayetstudios.com/offers/web_offerwall/YOUR_PLACEMENT_ID?external_identifier=${currentUser.id}`;
+            window.open(offerUrl, '_blank');
+        }
+
+        async function addNewTask(e) {
+            e.preventDefault();
+            const title = document.getElementById('new-task-title').value.trim();
+            const reward = parseInt(document.getElementById('new-task-reward').value);
+            const link = document.getElementById('new-task-link').value.trim();
+            const msg = document.getElementById('admin-msg');
+
+            const { error } = await supabaseClient
+                .from('site_tasks')
+                .insert([{ title, reward, link }]);
+
+            if (error) {
+                msg.textContent = 'خطأ: ' + error.message;
+            } else {
+                msg.textContent = '✅ تم النشر بنجاح!';
+                document.getElementById('new-task-title').value = '';
+                document.getElementById('new-task-reward').value = '';
+                document.getElementById('new-task-link').value = '';
+                await loadTasks();
+            }
+        }
+
+        async function loadAdminData() {
+            const usersList = document.getElementById('admin-users-list');
+            const { data: users } = await supabaseClient.from('profiles').select('*').order('balance', { ascending: false });
+
+            if (users && users.length > 0) {
+                usersList.innerHTML = '';
+                users.forEach(u => {
+                    usersList.innerHTML += `
+                        <div class="bg-gray-900 p-3 rounded-xl border ${u.is_banned ? 'border-red-500/50' : 'border-gray-800'} flex flex-col gap-2">
+                            <div class="flex justify-between items-center">
+                                <span class="text-[11px] font-bold text-gray-200 truncate max-w-[180px]">${u.email || u.id}</span>
+                                <span class="text-xs font-black text-emerald-400">${u.balance || 0} نقطة</span>
+                            </div>
+                            <div class="flex gap-1.5">
+                                <button onclick="modifyUserBalance('${u.id}', ${u.balance || 0}, 50)" class="flex-1 bg-emerald-500/20 text-emerald-400 text-[10px] font-bold py-1.5 rounded-lg">+50 نقطة</button>
+                                <button onclick="modifyUserBalance('${u.id}', ${u.balance || 0}, -50)" class="flex-1 bg-amber-500/20 text-amber-400 text-[10px] font-bold py-1.5 rounded-lg">-50 نقطة</button>
+                                <button onclick="toggleBanUser('${u.id}', ${u.is_banned})" class="flex-1 ${u.is_banned ? 'bg-blue-500/20 text-blue-400' : 'bg-red-500/20 text-red-400'} text-[10px] font-bold py-1.5 rounded-lg">
+                                    ${u.is_banned ? 'فك الحظر' : 'حظر'}
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+
+            const wList = document.getElementById('admin-withdrawals-list');
+            const { data: withdrawals } = await supabaseClient.from('withdrawals').select('*').order('created_at', { ascending: false });
+
+            if (withdrawals && withdrawals.length > 0) {
+                wList.innerHTML = '';
+                withdrawals.forEach(w => {
+                    wList.innerHTML += `
+                        <div class="bg-gray-900 p-3 rounded-xl border border-gray-800 flex justify-between items-center">
+                            <div>
+                                <p class="text-[11px] font-bold text-white">${w.wallet_info || 'بدون محفظة'}</p>
+                                <p class="text-[10px] text-gray-400">${w.email || ''} • <span class="text-amber-400 font-bold">${w.amount} نقطة</span></p>
+                            </div>
+                            <span class="text-[10px] px-2 py-1 rounded-lg bg-amber-500/20 text-amber-300">${w.status || 'معلق'}</span>
+                        </div>
+                    `;
+                });
+            }
+        }
+
+        async function modifyUserBalance(userId, oldBal, change) {
+            const newBal = Math.max(0, oldBal + change);
+            await supabaseClient.from('profiles').update({ balance: newBal }).eq('id', userId);
+            if (userId === currentUser.id) {
+                currentBalance = newBal;
+                updateBalanceUI();
+            }
+            await loadAdminData();
+        }
+
+        async function toggleBanUser(userId, currentStatus) {
+            await supabaseClient.from('profiles').update({ is_banned: !currentStatus }).eq('id', userId);
+            await loadAdminData();
+        }
+
+        async function logout() {
+            await supabaseClient.auth.signOut();
+            location.reload();
+        }
+    </script>
+</body>
+</html>
