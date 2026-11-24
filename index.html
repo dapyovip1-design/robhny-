@@ -2,392 +2,143 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ربحني - لوحة التحكم الشاملة</title>
-    <!-- Tailwind CSS CDN -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ربحني - منصة المهام والعروض</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Supabase JS Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
     <style>
         body {
-            background-color: #0b0f19;
-            color: #ffffff;
             font-family: 'Cairo', sans-serif;
+            background-color: #0b0f19;
+            color: #f3f4f6;
             user-select: none;
+            -webkit-user-select: none;
         }
         .glass {
-            background: rgba(17, 24, 39, 0.7);
+            background: rgba(17, 24, 39, 0.85);
             backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.08);
         }
     </style>
 </head>
-<body class="min-h-screen flex flex-col justify-between p-4">
+<body class="min-h-screen pb-10">
 
-    <!-- Header -->
-    <header class="w-full max-w-md mx-auto flex justify-between items-center py-4">
-        <h1 class="text-xl font-bold text-emerald-400">⚡ ربحني</h1>
-        <div id="user-info" class="hidden flex items-center gap-3">
-            <span id="user-balance" class="bg-emerald-950 text-emerald-400 px-3 py-1 rounded-full text-sm font-semibold">0.00 نقطة</span>
-            <button onclick="logout()" class="text-xs bg-red-600 hover:bg-red-700 px-3 py-1 rounded-lg transition">خروج</button>
-        </div>
-    </header>
-
-    <!-- Main Container -->
-    <main class="w-full max-w-md mx-auto my-auto space-y-4">
-        
-        <!-- Auth Section -->
-        <div id="auth-section" class="glass p-6 rounded-2xl shadow-xl">
-            <h2 class="text-2xl font-bold text-center mb-2">أهلاً بك في ربحني 🚀</h2>
-            <p class="text-gray-400 text-center text-sm mb-6">اربح من المهام والعروض، واطلب أرباحك فوراً</p>
-            
-            <form id="auth-form" onsubmit="handleAuth(event)" class="space-y-4">
+    <!-- شاشة تسجيل الدخول / إنشاء حساب -->
+    <div id="auth-section" class="min-h-screen flex items-center justify-center p-4">
+        <div class="glass w-full max-w-md p-6 rounded-2xl shadow-2xl">
+            <div class="text-center mb-6">
+                <h1 class="text-3xl font-black text-emerald-400">⚡ ربحني</h1>
+                <p class="text-xs text-gray-400 mt-1">أكمل المهام والعروض واسحب أرباحك فوراً</p>
+            </div>
+            <form id="auth-form" class="space-y-4">
                 <div>
                     <label class="block text-xs text-gray-400 mb-1">البريد الإلكتروني</label>
-                    <input type="email" id="email" required class="w-full bg-gray-900 border border-gray-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-emerald-500">
+                    <input type="email" id="auth-email" required placeholder="example@gmail.com" class="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-sm text-white focus:border-emerald-500 outline-none text-left" dir="ltr">
                 </div>
                 <div>
                     <label class="block text-xs text-gray-400 mb-1">كلمة المرور</label>
-                    <input type="password" id="password" required class="w-full bg-gray-900 border border-gray-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-emerald-500">
+                    <input type="password" id="auth-password" required placeholder="••••••••" class="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-sm text-white focus:border-emerald-500 outline-none text-left" dir="ltr">
                 </div>
-                <button type="submit" id="auth-btn" class="w-full bg-emerald-500 hover:bg-emerald-600 text-black font-bold py-3 rounded-xl transition shadow-lg shadow-emerald-500/20">تسجيل الدخول</button>
+                <div class="flex gap-2 pt-2">
+                    <button type="button" onclick="handleAuth('login')" class="flex-1 bg-emerald-500 hover:bg-emerald-600 text-black font-bold py-3 rounded-xl text-sm transition">تسجيل الدخول</button>
+                    <button type="button" onclick="handleAuth('signup')" class="flex-1 bg-gray-800 hover:bg-gray-700 text-white font-bold py-3 rounded-xl text-sm border border-gray-700 transition">حساب جديد</button>
+                </div>
+                <p id="auth-msg" class="text-center text-xs text-amber-400 mt-2"></p>
             </form>
-            <div class="mt-4 text-center">
-                <button onclick="toggleMode()" id="switch-mode-btn" class="text-xs text-emerald-400 hover:underline">ليس لديك حساب؟ إنشاء حساب جديد</button>
-            </div>
-            <div id="error-msg" class="mt-3 text-center text-xs text-red-400"></div>
         </div>
+    </div>
 
-        <!-- Dashboard / Main Navigation Section -->
-        <div id="dashboard-section" class="hidden space-y-4">
-            
-            <!-- Balance Card -->
-            <div class="glass p-6 rounded-2xl text-center shadow-xl">
-                <h3 class="text-sm font-semibold text-gray-300 mb-1">رصيدك الحالي</h3>
-                <h2 id="dashboard-balance" class="text-3xl font-black text-emerald-400 mb-4">0.00</h2>
-                
-                <!-- Navigation Tabs -->
-                <div class="grid grid-cols-3 gap-2 mt-4">
-                    <button onclick="switchTab('offers')" id="tab-offers" class="bg-emerald-600 text-black font-bold py-2 rounded-xl text-xs transition">العروض</button>
-                    <button onclick="switchTab('tasks')" id="tab-tasks" class="bg-gray-800 text-gray-300 hover:bg-gray-700 font-bold py-2 rounded-xl text-xs transition">المهام</button>
-                    <button onclick="switchTab('wallet')" id="tab-wallet" class="bg-gray-800 text-gray-300 hover:bg-gray-700 font-bold py-2 rounded-xl text-xs transition">المحفظة</button>
-                </div>
-            </div>
-
-            <!-- Tab 1: Offers -->
-            <div id="content-offers" class="space-y-3">
-                <div class="glass p-5 rounded-2xl text-center">
-                    <h3 class="font-bold text-gray-200 mb-2">🎮 حائط العروض الكبرى</h3>
-                    <p class="text-xs text-gray-400 mb-4">أكمل الألعاب والعروض لتضاف الأرباح تلقائياً</p>
-                    <button onclick="openOfferwall()" class="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 text-black font-bold py-3 rounded-xl transition shadow-lg text-sm">
-                        افتح عروض ayeT-Studios
-                    </button>
-                </div>
-            </div>
-
-            <!-- Tab 2: Tasks -->
-            <div id="content-tasks" class="hidden space-y-3">
-                <div class="glass p-4 rounded-2xl">
-                    <h3 class="font-bold text-gray-200 mb-3 text-sm">📌 مهام الإعلانات والمواقع</h3>
-                    <div id="tasks-list" class="space-y-2">
-                        <p class="text-xs text-gray-400 text-center py-2">جاري تحميل المهام...</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Tab 3: Wallet -->
-            <div id="content-wallet" class="hidden space-y-3">
-                <div class="glass p-5 rounded-2xl space-y-3">
-                    <h3 class="font-bold text-gray-200 text-sm">💳 طلب سحب الأرباح</h3>
-                    <div class="space-y-2">
-                        <input type="text" id="payout-account" placeholder="رقم فودافون كاش أو معرف InstaPay" class="w-full bg-gray-900 border border-gray-800 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-emerald-500">
-                        <input type="number" id="payout-amount" placeholder="عدد النقاط (الحد الأدنى 1000)" class="w-full bg-gray-900 border border-gray-800 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-emerald-500">
-                        <button onclick="requestPayout()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-black font-bold py-2.5 rounded-xl text-xs transition">إرسال طلب السحب</button>
-                    </div>
-                    <div id="payout-msg" class="text-center text-xs text-emerald-400"></div>
-                </div>
-            </div>
-
-            <!-- Admin Panel Section -->
-            <div id="admin-section" class="hidden space-y-4">
-                <!-- Add Task Box -->
-                <div class="glass p-4 rounded-2xl border border-yellow-500/30 space-y-3">
-                    <h4 class="text-yellow-400 font-bold text-sm">👑 إضافة مهمة جديدة للمستخدمين</h4>
-                    <form onsubmit="addNewTask(event)" class="space-y-2">
-                        <input type="text" id="new-task-title" placeholder="عنوان المهمة (مثلاً: تابع صفحتنا)" required class="w-full bg-gray-900 border border-gray-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-yellow-500">
-                        <input type="number" id="new-task-reward" placeholder="النقاط (مثلاً: 25)" required class="w-full bg-gray-900 border border-gray-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-yellow-500">
-                        <input type="url" id="new-task-link" placeholder="رابط المهمة (https://...)" required class="w-full bg-gray-900 border border-gray-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-yellow-500">
-                        <button type="submit" class="w-full bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-2 rounded-xl text-xs transition">نشر المهمة</button>
-                    </form>
-                    <div id="admin-msg" class="text-center text-xs text-yellow-400"></div>
-                </div>
-
-                <!-- Users Management List Box -->
-                <div class="glass p-4 rounded-2xl border border-red-500/30 space-y-3">
-                    <h4 class="text-red-400 font-bold text-sm">👥 قائمة المستخدمين المسجلين (إدارة فورية)</h4>
-                    <p class="text-[11px] text-gray-400">اضغط على أي مستخدم لتعديل رصيده أو حظره مباشرة.</p>
-                    <div id="admin-users-list" class="space-y-2 max-h-60 overflow-y-auto">
-                        <p class="text-xs text-gray-400 text-center py-2">جاري تحميل المستخدمين...</p>
-                    </div>
-                </div>
-            </div>
-
+    <!-- شاشة الحظر -->
+    <div id="banned-section" class="hidden min-h-screen flex items-center justify-center p-4">
+        <div class="glass w-full max-w-md p-8 rounded-2xl text-center border border-red-500/40">
+            <div class="text-5xl mb-4">🚫</div>
+            <h2 class="text-xl font-black text-red-500 mb-2">تم حظر حسابك!</h2>
+            <p class="text-xs text-gray-400 mb-6">تم إيقاف هذا الحساب لمخالفة شروط الاستخدام.</p>
+            <button onclick="logout()" class="bg-red-600 text-white text-xs font-bold px-6 py-2.5 rounded-xl">تسجيل الخروج</button>
         </div>
+    </div>
 
-    </main>
-
-    <!-- Footer -->
-    <footer class="text-center text-xs text-gray-600 py-4">
-        جميع الحقوق محفوظة &copy; 2026 ربحني
-    </footer>
-
-    <!-- Supabase Logic Script -->
-    <script>
-        const SUPABASE_URL = 'https://yreoztmcjylqlaonuadb.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlyZW96dG1janlscWxhb251YWRiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTU1MjYyNjcsImV4cCI6MjExMTEwMjI2N30.4aOPvo2qZK0_iAs1gdekA_3Lqx6yO1v4C1kSB-djM0Y';
+    <!-- التطبيق الرئيسي -->
+    <div id="app-section" class="hidden max-w-md mx-auto p-4 space-y-4">
         
-        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        <!-- الهيدر -->
+        <header class="flex justify-between items-center py-2">
+            <div class="flex items-center gap-2">
+                <button onclick="logout()" class="bg-red-500/20 text-red-400 border border-red-500/30 px-3 py-1.5 rounded-xl text-xs font-bold">خروج</button>
+                <span id="user-balance" class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-3 py-1.5 rounded-xl text-xs font-bold">0 نقطة</span>
+            </div>
+            <h1 class="text-xl font-black text-emerald-400">⚡ ربحني</h1>
+        </header>
 
-        let isSignUp = false;
-        let currentUser = null;
-        let currentBalance = 0;
+        <!-- بطاقة الرصيد والتنقل -->
+        <div class="glass p-5 rounded-2xl text-center space-y-4">
+            <div>
+                <p class="text-xs text-gray-400">رصيدك الحالي</p>
+                <h2 id="dashboard-balance" class="text-4xl font-black text-emerald-400 mt-1">0</h2>
+            </div>
+            <div class="grid grid-cols-3 gap-2">
+                <button onclick="switchTab('wallet')" id="tab-wallet" class="py-2 rounded-xl text-xs font-bold bg-gray-800 text-gray-300 transition">المحفظة</button>
+                <button onclick="switchTab('tasks')" id="tab-tasks" class="py-2 rounded-xl text-xs font-bold bg-emerald-500 text-black transition">المهام</button>
+                <button onclick="switchTab('offers')" id="tab-offers" class="py-2 rounded-xl text-xs font-bold bg-gray-800 text-gray-300 transition">العروض</button>
+            </div>
+        </div>
 
-        window.addEventListener('DOMContentLoaded', async () => {
-            const { data: { session } } = await supabaseClient.auth.getSession();
-            if (session) {
-                currentUser = session.user;
-                await checkBanAndProceed();
-            }
-        });
+        <!-- قسم العروض (Offerwall) -->
+        <div id="view-offers" class="hidden glass p-5 rounded-2xl text-center space-y-3">
+            <h3 class="text-base font-bold text-white">🎮 حائط العروض الكبرى</h3>
+            <p class="text-xs text-gray-400">أكمل الألعاب والاستطلاعات لتضاف الأرباح تلقائياً</p>
+            <button onclick="openOfferwall()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-black font-bold py-3 rounded-xl text-sm transition">افتح عروض ayeT-Studios</button>
+        </div>
 
-        async function checkBanAndProceed() {
-            // التأكد من وجود ملف تعريف للمستخدم أو إنشائه تلقائياً، والتحقق من الحظر
-            let { data: profile } = await supabaseClient
-                .from('profiles')
-                .select('*')
-                .eq('id', currentUser.id)
-                .single();
+        <!-- قسم المهام -->
+        <div id="view-tasks" class="glass p-5 rounded-2xl space-y-3">
+            <h3 class="text-sm font-bold text-white flex items-center gap-1">📌 مهام الإعلانات والمواقع</h3>
+            <div id="tasks-list" class="space-y-2.5">
+                <p class="text-xs text-gray-400 text-center py-3">جاري تحميل المهام...</p>
+            </div>
+        </div>
 
-            if (!profile) {
-                // إنشاء بروفایل للمستخدم الجديد تلقائياً لو مش موجود
-                await supabaseClient.from('profiles').insert([{ id: currentUser.id, email: currentUser.email, balance: 0, is_banned: false }]);
-            } else if (profile.is_banned) {
-                alert('تم حظر حسابك من قبل الإدارة.');
-                await supabaseClient.auth.signOut();
-                location.reload();
-                return;
-            }
+        <!-- قسم المحفظة والسحب -->
+        <div id="view-wallet" class="hidden glass p-5 rounded-2xl space-y-4">
+            <div class="flex justify-between items-center">
+                <h3 class="text-sm font-bold text-white">💳 طلب سحب الأرباح</h3>
+                <span class="text-[10px] bg-amber-500/20 text-amber-400 px-2 py-1 rounded-lg">الحد الأدنى: 1000 نقطة</span>
+            </div>
+            <form onsubmit="requestWithdrawal(event)" class="space-y-3">
+                <div>
+                    <input type="text" id="withdraw-wallet" required placeholder="رقم فودافون كاش / انستا باي / محفظة" class="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-xs text-white focus:border-emerald-500 outline-none text-left" dir="ltr">
+                </div>
+                <div>
+                    <input type="number" id="withdraw-amount" required min="1000" placeholder="عدد النقاط المراد سحبها (الحد الأدنى 1000)" class="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-xs text-white focus:border-emerald-500 outline-none text-left" dir="ltr">
+                </div>
+                <button type="submit" id="withdraw-btn" class="w-full bg-emerald-500 hover:bg-emerald-600 text-black font-bold py-3 rounded-xl text-xs transition">إرسال طلب السحب</button>
+                <p id="withdraw-msg" class="text-center text-xs mt-1"></p>
+            </form>
+        </div>
 
-            showDashboard();
-        }
-
-        function toggleMode() {
-            isSignUp = !isSignUp;
-            const btn = document.getElementById('auth-btn');
-            const switchBtn = document.getElementById('switch-mode-btn');
-            if (isSignUp) {
-                btn.textContent = 'إنشاء حساب جديد';
-                switchBtn.textContent = 'لديك حساب بالفعل؟ تسجيل الدخول';
-            } else {
-                btn.textContent = 'تسجيل الدخول';
-                switchBtn.textContent = 'ليس لديك حساب؟ إنشاء حساب جديد';
-            }
-        }
-
-        async function handleAuth(e) {
-            e.preventDefault();
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            const errDiv = document.getElementById('error-msg');
-            errDiv.textContent = '';
-
-            try {
-                if (isSignUp) {
-                    const { data, error } = await supabaseClient.auth.signUp({ email, password });
-                    if (error) throw error;
-                    // إضافة البروفايل فوراً لقاعدة البيانات
-                    if (data.user) {
-                        await supabaseClient.from('profiles').insert([{ id: data.user.id, email: email, balance: 0, is_banned: false }]);
-                    }
-                    alert('تم إنشاء الحساب بنجاح! يمكنك تسجيل الدخول الآن.');
-                    isSignUp = false;
-                    toggleMode();
-                } else {
-                    const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
-                    if (error) throw error;
-                    currentUser = data.user;
-                    await checkBanAndProceed();
-                }
-            } catch (err) {
-                errDiv.textContent = 'خطأ: ' + err.message;
-            }
-        }
-
-        async function showDashboard() {
-            document.getElementById('auth-section').classList.add('hidden');
-            document.getElementById('user-info').classList.remove('hidden');
-            document.getElementById('dashboard-section').classList.remove('hidden');
+        <!-- ==================== لوحة تحكم الأدمن (تظهر فقط لـ gezo@gmail.com) ==================== -->
+        <div id="admin-panel" class="hidden space-y-4 pt-2">
             
-            if (currentUser && currentUser.email === 'gezo@gmail.com') {
-                document.getElementById('admin-section').classList.remove('hidden');
-                await loadAdminUsersList();
-            }
+            <!-- 1. إضافة مهمة أو مسابقة جديدة -->
+            <div class="glass p-5 rounded-2xl border border-amber-500/30 space-y-3">
+                <h3 class="text-sm font-bold text-amber-400">👑 إضافة مهمة أو مسابقة للمستخدمين</h3>
+                <form onsubmit="addNewTask(event)" class="space-y-2.5">
+                    <input type="text" id="new-task-title" required placeholder="عنوان المهمة أو المسابقة (مثلاً: تابع صفحتنا)" class="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-xs text-white outline-none">
+                    <input type="number" id="new-task-reward" required placeholder="النقاط (مثلاً: 25)" class="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-xs text-white outline-none">
+                    <input type="url" id="new-task-link" required placeholder="الرابط (https://...)" class="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-xs text-white outline-none text-left" dir="ltr">
+                    <button type="submit" class="w-full bg-amber-500 hover:bg-amber-600 text-black font-bold py-3 rounded-xl text-xs transition">نشر الآن</button>
+                    <p id="admin-msg" class="text-center text-xs text-amber-300"></p>
+                </form>
+            </div>
 
-            await fetchBalance();
-            await loadTasks();
-        }
+            <!-- 2. إدارة طلبات السحب -->
+            <div class="glass p-5 rounded-2xl border border-emerald-500/30 space-y-3">
+                <h3 class="text-sm font-bold text-emerald-400">💸 طلبات السحب المعلقة</h3>
+                <div id="admin-withdrawals-list" class="space-y-2 max-h-60 overflow-y-auto">
+                    <p class="text-xs text-gray-400 text-center">لا توجد طلبات سحب حالياً</p>
+                </div>
+            </div>
 
-        async function fetchBalance() {
-            if (!currentUser) return;
-            const { data } = await supabaseClient
-                .from('profiles')
-                .select('balance')
-                .eq('id', currentUser.id)
-                .single();
-
-            if (data) {
-                currentBalance = data.balance || 0;
-                document.getElementById('user-balance').textContent = currentBalance + ' نقطة';
-                document.getElementById('dashboard-balance').textContent = currentBalance;
-            }
-        }
-
-        function switchTab(tab) {
-            ['offers', 'tasks', 'wallet'].forEach(t => {
-                document.getElementById(`content-${t}`).classList.add('hidden');
-                document.getElementById(`tab-${t}`).className = 'bg-gray-800 text-gray-300 hover:bg-gray-700 font-bold py-2 rounded-xl text-xs transition';
-            });
-            document.getElementById(`content-${tab}`).classList.remove('hidden');
-            document.getElementById(`tab-${tab}`).className = 'bg-emerald-600 text-black font-bold py-2 rounded-xl text-xs transition';
-        }
-
-        async function loadTasks() {
-            const tasksList = document.getElementById('tasks-list');
-            const { data } = await supabaseClient.from('site_tasks').select('*');
-            
-            if (!data || data.length === 0) {
-                tasksList.innerHTML = '<p class="text-xs text-gray-400 text-center py-2">لا توجد مهام متاحة حالياً</p>';
-                return;
-            }
-
-            tasksList.innerHTML = '';
-            data.forEach(task => {
-                tasksList.innerHTML += `
-                    <div class="bg-gray-900/60 p-3 rounded-xl flex justify-between items-center">
-                        <div>
-                            <p class="text-xs font-bold text-gray-200">${task.title}</p>
-                            <span class="text-[10px] text-emerald-400">+${task.reward} نقطة</span>
-                        </div>
-                        <button onclick="completeTask('${task.link}', ${task.reward})" class="bg-emerald-500 hover:bg-emerald-600 text-black text-xs font-bold px-3 py-1.5 rounded-lg">تنفيذ</button>
-                    </div>
-                `;
-            });
-        }
-
-        async function addNewTask(e) {
-            e.preventDefault();
-            const title = document.getElementById('new-task-title').value;
-            const reward = parseInt(document.getElementById('new-task-reward').value);
-            const link = document.getElementById('new-task-link').value;
-            const msg = document.getElementById('admin-msg');
-
-            const { error } = await supabaseClient.from('site_tasks').insert([{ title, reward, link }]);
-            if (error) {
-                msg.textContent = 'خطأ: ' + error.message;
-            } else {
-                msg.textContent = 'تم نشر المهمة بنجاح!';
-                document.getElementById('new-task-title').value = '';
-                document.getElementById('new-task-reward').value = '';
-                document.getElementById('new-task-link').value = '';
-                loadTasks();
-            }
-        }
-
-        // --- تحميل قائمة المستخدمين في لوحة الأدمن ---
-        async function loadAdminUsersList() {
-            const listDiv = document.getElementById('admin-users-list');
-            const { data: users, error } = await supabaseClient.from('profiles').select('*');
-
-            if (!users || users.length === 0) {
-                listDiv.innerHTML = '<p class="text-xs text-gray-400 text-center py-2">لا توجد مستخدمين مسجلين بعد</p>';
-                return;
-            }
-
-            listDiv.innerHTML = '';
-            users.forEach(u => {
-                listDiv.innerHTML += `
-                    <div class="bg-gray-900 p-2.5 rounded-xl space-y-2 border border-gray-800">
-                        <div class="flex justify-between items-center text-xs">
-                            <span class="text-gray-300 font-semibold">${u.email || 'مستخدم بدون إيميل'}</span>
-                            <span class="text-emerald-400 font-bold">${u.balance || 0} نقطة</span>
-                        </div>
-                        <div class="flex gap-1 pt-1">
-                            <button onclick="adminAdjustPoints('${u.id}', 50)" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-[10px] py-1 rounded-lg">+50</button>
-                            <button onclick="adminAdjustPoints('${u.id}', -50)" class="flex-1 bg-orange-600 hover:bg-orange-700 text-white text-[10px] py-1 rounded-lg">-50</button>
-                            <button onclick="adminBanUser('${u.id}')" class="flex-1 bg-red-600 hover:bg-red-700 text-white text-[10px] py-1 rounded-lg">حظر وطرد</button>
-                        </div>
-                    </div>
-                `;
-            });
-        }
-
-        async function adminAdjustPoints(userId, amount) {
-            // جلب الرصيد الحالي للمستخدم
-            const { data } = await supabaseClient.from('profiles').select('balance').eq('id', userId).single();
-            if (!data) return;
-
-            const newBalance = (data.balance || 0) + amount;
-            await supabaseClient.from('profiles').update({ balance: newBalance }).eq('id', userId);
-            
-            alert('تم تعديل رصيد المستخدم بنجاح!');
-            loadAdminUsersList();
-        }
-
-        async function adminBanUser(userId) {
-            if (!confirm('هل أنت متأكد من حظر وطرد هذا المستخدم نهائياً؟')) return;
-            
-            await supabaseClient.from('profiles').update({ is_banned: true, balance: 0 }).eq('id', userId);
-            alert('تم حظر المستخدم بنجاح!');
-            loadAdminUsersList();
-        }
-
-        async function completeTask(link, reward) {
-            window.open(link, '_blank');
-            currentBalance += reward;
-            document.getElementById('user-balance').textContent = currentBalance + ' نقطة';
-            document.getElementById('dashboard-balance').textContent = currentBalance;
-            
-            await supabaseClient
-                .from('profiles')
-                .update({ balance: currentBalance })
-                .eq('id', currentUser.id);
-
-            alert(`مبروك! تمت إضافة النقاط إلى رصيدك.`);
-        }
-
-        function requestPayout() {
-            const acc = document.getElementById('payout-account').value;
-            const amt = document.getElementById('payout-amount').value;
-            const msg = document.getElementById('payout-msg');
-            
-            if (!acc || !amt || amt < 1000) {
-                msg.textContent = 'يرجى التأكد من ادخال البيانات والحد الأدنى (1000 نقطة)';
-                return;
-            }
-            msg.textContent = 'تم إرسال طلب السحب بنجاح!';
-        }
-
-        function openOfferwall() {
-            if (!currentUser) return alert('يرجى تسجيل الدخول أولاً');
-            const userId = currentUser.id;
-            const offerwallUrl = `https://www.ayetstudios.com/offers/web_offerwall/YOUR_PUBLISHER_ID?user_id=${userId}`;
-            window.open(offerwallUrl, '_blank');
-        }
-
-        async function logout() {
-            await supabaseClient.auth.signOut();
-            location.reload();
-        }
-    </script>
-</body>
-</html>
+            <!-- 3. إدارة المستخدمين (رصيد وحظر) -->
+            <div class="glass p-
