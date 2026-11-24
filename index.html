@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ربحني - منصة المهام والعروض</title>
+    <title>ربحني - منصة المهام والعروض الشاملة</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Supabase JS Client -->
@@ -34,12 +34,12 @@
     </header>
 
     <!-- Main Container -->
-    <main class="w-full max-w-md mx-auto my-auto">
+    <main class="w-full max-w-md mx-auto my-auto space-y-4">
         
         <!-- Auth Section -->
         <div id="auth-section" class="glass p-6 rounded-2xl shadow-xl">
             <h2 class="text-2xl font-bold text-center mb-2">أهلاً بك في ربحني 🚀</h2>
-            <p class="text-gray-400 text-center text-sm mb-6">اربح يومياً من المهام والألعاب، أو روّج لحساباتك</p>
+            <p class="text-gray-400 text-center text-sm mb-6">اربح يومياً من المهام والعروض، واطلب أرباحك فوراً</p>
             
             <form id="auth-form" onsubmit="handleAuth(event)" class="space-y-4">
                 <div>
@@ -58,18 +58,81 @@
             <div id="error-msg" class="mt-3 text-center text-xs text-red-400"></div>
         </div>
 
-        <!-- Dashboard / Offerwall Section -->
+        <!-- Dashboard / Main Navigation Section -->
         <div id="dashboard-section" class="hidden space-y-4">
+            
+            <!-- Balance Card -->
             <div class="glass p-6 rounded-2xl text-center shadow-xl">
-                <h3 class="text-lg font-semibold text-gray-300 mb-1">رصيدك الحالي</h3>
+                <h3 class="text-sm font-semibold text-gray-300 mb-1">رصيدك الحالي</h3>
                 <h2 id="dashboard-balance" class="text-3xl font-black text-emerald-400 mb-4">0.00</h2>
-                <p class="text-xs text-gray-400">أكمل العروض أدناه لتضاف الأرباح إلى رصيدك تلقائياً!</p>
+                
+                <!-- Navigation Tabs -->
+                <div class="grid grid-cols-3 gap-2 mt-4">
+                    <button onclick="switchTab('offers')" id="tab-offers" class="bg-emerald-600 text-black font-bold py-2 rounded-xl text-xs transition">العروض</button>
+                    <button onclick="switchTab('tasks')" id="tab-tasks" class="bg-gray-800 text-gray-300 hover:bg-gray-700 font-bold py-2 rounded-xl text-xs transition">المهام</button>
+                    <button onclick="switchTab('wallet')" id="tab-wallet" class="bg-gray-800 text-gray-300 hover:bg-gray-700 font-bold py-2 rounded-xl text-xs transition">المحفظة والسحب</button>
+                </div>
             </div>
 
-            <!-- ayeT-Studios Offerwall Button -->
-            <button onclick="openOfferwall()" class="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-black font-bold py-4 rounded-xl transition shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2">
-                🎮 العب واربح (حائط عروض ayeT-Studios)
-            </button>
+            <!-- Tab 1: Offers -->
+            <div id="content-offers" class="space-y-3">
+                <div class="glass p-5 rounded-2xl text-center">
+                    <h3 class="font-bold text-gray-200 mb-2">🎮 حائط العروض الكبرى</h3>
+                    <p class="text-xs text-gray-400 mb-4">أكمل الألعاب والعروض لتضاف الأرباح تلقائياً</p>
+                    <button onclick="openOfferwall()" class="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 text-black font-bold py-3 rounded-xl transition shadow-lg text-sm">
+                        افتح عروض ayeT-Studios
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tab 2: Tasks -->
+            <div id="content-tasks" class="hidden space-y-3">
+                <div class="glass p-4 rounded-2xl">
+                    <h3 class="font-bold text-gray-200 mb-3 text-sm">📌 مهام مشاهدة الإعلانات (PTC)</h3>
+                    <div class="space-y-2">
+                        <div class="bg-gray-900/60 p-3 rounded-xl flex justify-between items-center">
+                            <div>
+                                <p class="text-xs font-bold text-gray-200">زيارة موقع الإعلان #1</p>
+                                <span class="text-[10px] text-emerald-400">+10 نقاط (30 ثانية)</span>
+                            </div>
+                            <button onclick="completeTask(10)" class="bg-emerald-500 hover:bg-emerald-600 text-black text-xs font-bold px-3 py-1.5 rounded-lg">زيارة</button>
+                        </div>
+                        <div class="bg-gray-900/60 p-3 rounded-xl flex justify-between items-center">
+                            <div>
+                                <p class="text-xs font-bold text-gray-200">مشاهدة فيديو ترويجي</p>
+                                <span class="text-[10px] text-emerald-400">+15 نقطة</span>
+                            </div>
+                            <button onclick="completeTask(15)" class="bg-emerald-500 hover:bg-emerald-600 text-black text-xs font-bold px-3 py-1.5 rounded-lg">مشاهدة</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 3: Wallet & Payouts -->
+            <div id="content-wallet" class="hidden space-y-3">
+                <div class="glass p-5 rounded-2xl space-y-3">
+                    <h3 class="font-bold text-gray-200 text-sm">💳 طلب سحب الأرباح</h3>
+                    <p class="text-xs text-gray-400">الحد الأدنى للسحب: 1000 نقطة (يتحول فودافون كاش / إنستا باي)</p>
+                    
+                    <div class="space-y-2">
+                        <input type="text" id="payout-account" placeholder="رقم فودافون كاش أو معرف InstaPay" class="w-full bg-gray-900 border border-gray-800 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-emerald-500">
+                        <input type="number" id="payout-amount" placeholder="عدد النقاط المراد سحبها" class="w-full bg-gray-900 border border-gray-800 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-emerald-500">
+                        <button onclick="requestPayout()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-black font-bold py-2.5 rounded-xl text-xs transition">إرسال طلب السحب</button>
+                    </div>
+                    <div id="payout-msg" class="text-center text-xs text-emerald-400"></div>
+                </div>
+            </div>
+
+            <!-- Admin Panel Section (Appears only for gezo@gmail.com) -->
+            <div id="admin-section" class="hidden glass p-4 rounded-2xl border border-yellow-500/30 mt-4">
+                <h4 class="text-yellow-400 font-bold mb-1 text-sm">👑 لوحة تحكم الأدمن</h4>
+                <p class="text-[11px] text-gray-400 mb-3">مرحباً بك يا باشمهندس، أنت تتحكم بكل بيانات المنصة.</p>
+                <div class="grid grid-cols-2 gap-2">
+                    <button onclick="alert('قسم إدارة المستخدمين وسجل السحب قيد التفعيل')" class="bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-2 rounded-xl text-xs">إدارة المستخدمين</button>
+                    <button onclick="alert('طلبات السحب المعلقة: 0')" class="bg-gray-800 hover:bg-gray-700 text-yellow-400 font-bold py-2 rounded-xl text-xs">طلبات السحب</button>
+                </div>
+            </div>
+
         </div>
 
     </main>
@@ -88,6 +151,7 @@
 
         let isSignUp = false;
         let currentUser = null;
+        let currentBalance = 0;
 
         window.addEventListener('DOMContentLoaded', async () => {
             const { data: { session } } = await supabaseClient.auth.getSession();
@@ -139,6 +203,12 @@
             document.getElementById('auth-section').classList.add('hidden');
             document.getElementById('user-info').classList.remove('hidden');
             document.getElementById('dashboard-section').classList.remove('hidden');
+            
+            // تحقق من حساب الأدمن
+            if (currentUser && currentUser.email === 'gezo@gmail.com') {
+                document.getElementById('admin-section').classList.remove('hidden');
+            }
+
             await fetchBalance();
         }
 
@@ -151,10 +221,49 @@
                 .single();
 
             if (data) {
-                const bal = data.balance || 0;
-                document.getElementById('user-balance').textContent = bal + ' نقطة';
-                document.getElementById('dashboard-balance').textContent = bal;
+                currentBalance = data.balance || 0;
+                document.getElementById('user-balance').textContent = currentBalance + ' نقطة';
+                document.getElementById('dashboard-balance').textContent = currentBalance;
             }
+        }
+
+        function switchTab(tab) {
+            ['offers', 'tasks', 'wallet'].forEach(t => {
+                document.getElementById(`content-${t}`).classList.add('hidden');
+                document.getElementById(`tab-${t}`).className = 'bg-gray-800 text-gray-300 hover:bg-gray-700 font-bold py-2 rounded-xl text-xs transition';
+            });
+            document.getElementById(`content-${tab}`).classList.remove('hidden');
+            document.getElementById(`tab-${tab}`).className = 'bg-emerald-600 text-black font-bold py-2 rounded-xl text-xs transition';
+        }
+
+        async function completeTask(reward) {
+            currentBalance += reward;
+            document.getElementById('user-balance').textContent = currentBalance + ' نقطة';
+            document.getElementById('dashboard-balance').textContent = currentBalance;
+            
+            // تحديث الرصيد في قاعدة البيانات
+            await supabaseClient
+                .from('profiles')
+                .update({ balance: currentBalance })
+                .eq('id', currentUser.id);
+
+            alert(`مبروك! تمت إضافة ${reward} نقطة إلى رصيدك بنجاح.`);
+        }
+
+        function requestPayout() {
+            const acc = document.getElementById('payout-account').value;
+            const amt = document.getElementById('payout-amount').value;
+            const msg = document.getElementById('payout-msg');
+            
+            if (!acc || !amt) {
+                msg.textContent = 'يرجى إدخال تفاصيل الحساب والمبلغ';
+                return;
+            }
+            if (amt < 1000) {
+                msg.textContent = 'الحد الأدنى للسحب هو 1000 نقطة';
+                return;
+            }
+            msg.textContent = 'تم إرسال طلب السحب بنجاح وسيتم المراجعة والتحويل قريباً!';
         }
 
         function openOfferwall() {
