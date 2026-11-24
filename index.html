@@ -447,7 +447,27 @@
                 await loadAdminData();
             }
 
-            // الاستماع اللحظي للإشعارات الجديدة
+            // الاستماع اللحظي لتحديثات الرصيد
+            supabaseClient
+                .channel('public:profiles:id=eq.' + user.id)
+                .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'profiles', filter: 'id=eq.' + user.id }, payload => {
+                    const newProfile = payload.new;
+                    if (newProfile.is_banned) {
+                        alert('🚫 تم حظر حسابك: ' + (newProfile.ban_reason || 'مخالفة الشروط'));
+                        logout();
+                    } else {
+                        const diff = newProfile.balance - currentBalance;
+                        currentBalance = newProfile.balance;
+                        updateBalanceUI();
+                        if (diff !== 0) {
+                            if (diff > 0) alert(`🎉 مبروك! تمت إضافة ${diff} نقطة إلى حسابك.`);
+                            else alert(`⚠️ تنبيه: تم خصم ${Math.abs(diff)} نقطة من حسابك.`);
+                        }
+                    }
+                })
+                .subscribe();
+
+            // الاستماع اللحظي للإشعارات الجديدة لتنبيج الجرس فوراً
             supabaseClient
                 .channel('public:notifications:user_id=eq.' + user.id)
                 .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: 'user_id=eq.' + user.id }, payload => {
@@ -824,7 +844,6 @@
             }
         }
 
-        // دالة الموافقة على المهمة باستخدام الـ RPC الآمن
         async function approveSubmission(subId, userId, taskId) {
             const { data: taskData } = await supabaseClient.from('site_tasks').select('reward, title').eq('id', taskId).single();
             if (!taskData) {
@@ -833,7 +852,6 @@
             }
             const reward = taskData.reward;
 
-            // تحديث الرصيد وإرسال إشعار عبر دالة قاعدة البيانات
             const { error: rpcErr } = await supabaseClient.rpc('admin_adjust_balance', {
                 target_user_id: userId,
                 points_change: reward,
@@ -851,7 +869,6 @@
             await loadAdminData();
         }
 
-        // دالة تعديل رصيد المستخدم للأدمن باستخدام الـ RPC الآمن
         async function modifyUserBalance(userId, change) {
             const reason = change > 0 ? `🎁 أضاف لك الأدمن ${change} نقطة إلى رصيدك.` : `⚠️ خصم الأدمن ${Math.abs(change)} نقطة من رصيدك.`;
             
