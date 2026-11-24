@@ -248,7 +248,7 @@
         </div>
     </div>
 
-    <!-- نافذة الإشعارات (مضاف إليها زر تحديث الرسائل) -->
+    <!-- نافذة الإشعارات (مع زر التحديث اليدوي) -->
     <div id="notifications-modal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
         <div class="glass w-full max-w-sm p-5 rounded-2xl space-y-3 border border-emerald-500/40">
             <div class="flex justify-between items-center">
@@ -293,7 +293,7 @@
             <input type="hidden" id="ban-user-id">
             <div>
                 <label class="block text-[11px] text-gray-400 mb-1">سبب الحظر (سيظهر للمستخدم عند محاولة الدخول)</label>
-                <textarea id="ban-reason-input" placeholder="مثلاً: تم حظر حسابك بسبب الغش أو تقديم إثبات غير صحيح" class="w-full bg-gray-900 border border-gray-700 rounded-xl p-2.5 text-xs text-white outline-none h-24"></textarea>
+                <textarea id="ban-reason-input" placeholder="مثلاً: تم حظر حسابك بسبب الغش أو تكرار الإثباتات الوهمية" class="w-full bg-gray-900 border border-gray-700 rounded-xl p-2.5 text-xs text-white outline-none h-24"></textarea>
             </div>
             <div class="flex gap-2 pt-1">
                 <button onclick="confirmBanUser()" class="flex-1 bg-red-600 text-white font-bold py-2.5 rounded-xl text-xs cursor-pointer">تأكيد الحظر</button>
@@ -609,12 +609,18 @@
         }
 
         async function requestWithdrawal(e) {
-            e.preventDefault();
+            if (e) e.preventDefault();
             const wallet = document.getElementById('withdraw-wallet').value.trim();
             const note = document.getElementById('withdraw-note').value.trim();
             const amount = parseInt(document.getElementById('withdraw-amount').value);
             const msg = document.getElementById('withdraw-msg');
             const btn = document.getElementById('withdraw-btn');
+
+            if (!wallet) {
+                msg.className = 'text-center text-xs text-red-400 mt-1';
+                msg.textContent = '❌ يرجى إدخال رقم المحفظة أو وسيلة السحب!';
+                return;
+            }
 
             if (isNaN(amount) || amount < siteSettings.min_withdraw) {
                 msg.className = 'text-center text-xs text-red-400 mt-1';
@@ -637,20 +643,25 @@
             btn.disabled = true;
             btn.textContent = 'جاري الإرسال...';
 
-            const newBalance = currentBalance - amount;
-            await supabaseClient.rpc('admin_adjust_balance', { target_user_id: currentUser.id, points_change: -amount, reason_text: `طلب سحب أرباح بقيمة ${amount} نقطة.` });
-
             const fullWalletInfo = note ? `${wallet} - ملاحظة: ${note}` : wallet;
 
+            // إرسال طلب السحب للأدمن بحالة pending بدون خصم فوري من رصيد المستخدم
             const { error } = await supabaseClient
                 .from('withdrawals')
-                .insert([{ user_id: currentUser.id, email: currentUser.email, wallet_info: fullWalletInfo, amount: amount, status: 'pending' }]);
+                .insert([{ 
+                    user_id: currentUser.id, 
+                    email: currentUser.email, 
+                    wallet_info: fullWalletInfo, 
+                    amount: amount, 
+                    status: 'pending' 
+                }]);
 
-            if (!error) {
-                currentBalance = newBalance;
-                updateBalanceUI();
+            if (error) {
+                msg.className = 'text-center text-xs text-red-400 mt-1';
+                msg.textContent = '❌ حدث خطأ: ' + error.message;
+            } else {
                 msg.className = 'text-center text-xs text-emerald-400 mt-1 font-bold';
-                msg.textContent = '✅ تم إرسال طلب السحب بنجاح!';
+                msg.textContent = '✅ تم إرسال طلب السحب بنجاح، بانتظار مراجعة الأدمن!';
                 document.getElementById('withdraw-wallet').value = '';
                 document.getElementById('withdraw-note').value = '';
                 document.getElementById('withdraw-amount').value = '';
@@ -916,9 +927,4 @@
             const reason = document.getElementById('ban-reason-input').value.trim() || 'مخالفة شروط الاستخدام';
             closeBanModal();
             await toggleBanUser(userId, true, reason);
-        }
-
-        async function toggleBanUser(userId, newStatus, reason) {
-            const { error } = await supabaseClient.from('profiles').update({ is_banned: newStatus, ban_reason: reason }).eq('id', userId);
-            if (error) {
-                alert('خطأ في تحديث حالة الحظر: ' + error.me
+      
