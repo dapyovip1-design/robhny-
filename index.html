@@ -31,21 +31,21 @@
                 <h1 class="text-3xl font-black text-emerald-400">⚡ ربحني</h1>
                 <p class="text-xs text-gray-400 mt-1">أكمل المهام وقدم إثبات التنفيذ واسحب أرباحك</p>
             </div>
-            <div class="space-y-4">
+            <form id="auth-form" class="space-y-4">
                 <div>
                     <label class="block text-xs text-gray-400 mb-1">البريد الإلكتروني</label>
-                    <input type="email" id="auth-email" placeholder="example@gmail.com" class="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-sm text-white focus:border-emerald-500 outline-none text-left" dir="ltr">
+                    <input type="email" id="auth-email" required placeholder="example@gmail.com" class="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-sm text-white focus:border-emerald-500 outline-none text-left" dir="ltr">
                 </div>
                 <div>
                     <label class="block text-xs text-gray-400 mb-1">كلمة المرور</label>
-                    <input type="password" id="auth-password" placeholder="••••••••" class="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-sm text-white focus:border-emerald-500 outline-none text-left" dir="ltr">
+                    <input type="password" id="auth-password" required placeholder="••••••••" class="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-sm text-white focus:border-emerald-500 outline-none text-left" dir="ltr">
                 </div>
                 <div class="flex gap-2 pt-2">
-                    <button type="button" onclick="handleAuth('login')" class="flex-1 bg-emerald-500 hover:bg-emerald-600 text-black font-bold py-3 rounded-xl text-sm transition cursor-pointer">تسجيل الدخول</button>
-                    <button type="button" onclick="handleAuth('signup')" class="flex-1 bg-gray-800 hover:bg-gray-700 text-white font-bold py-3 rounded-xl text-sm border border-gray-700 transition cursor-pointer">حساب جديد</button>
+                    <button type="button" onclick="handleAuth('login')" class="flex-1 bg-emerald-500 hover:bg-emerald-600 text-black font-bold py-3 rounded-xl text-sm transition">تسجيل الدخول</button>
+                    <button type="button" onclick="handleAuth('signup')" class="flex-1 bg-gray-800 hover:bg-gray-700 text-white font-bold py-3 rounded-xl text-sm border border-gray-700 transition">حساب جديد</button>
                 </div>
-                <p id="auth-msg" class="text-center text-xs text-amber-400 mt-2 font-bold"></p>
-            </div>
+                <p id="auth-msg" class="text-center text-xs text-amber-400 mt-2"></p>
+            </form>
         </div>
     </div>
 
@@ -55,7 +55,7 @@
             <div class="text-5xl mb-4">🚫</div>
             <h2 class="text-xl font-black text-red-500 mb-2">تم حظر حسابك!</h2>
             <p id="ban-reason-text" class="text-xs text-gray-400 mb-6">تم إيقاف هذا الحساب لمخالفة شروط الاستخدام.</p>
-            <button onclick="logout()" class="bg-red-600 text-white text-xs font-bold px-6 py-2.5 rounded-xl cursor-pointer">تسجيل الخروج</button>
+            <button onclick="logout()" class="bg-red-600 text-white text-xs font-bold px-6 py-2.5 rounded-xl">تسجيل الخروج</button>
         </div>
     </div>
 
@@ -63,13 +63,14 @@
     <div id="app-section" class="hidden max-w-md mx-auto p-4 space-y-4">
         
         <!-- الهيدر -->
-        <header class="flex justify-between items-center py-2 relative">
+        <header class="flex justify-between items-center py-2">
             <div class="flex items-center gap-2">
-                <button onclick="logout()" class="bg-red-500/20 text-red-400 border border-red-500/30 px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer">خروج</button>
+                <button onclick="logout()" class="bg-red-500/20 text-red-400 border border-red-500/30 px-3 py-1.5 rounded-xl text-xs font-bold">خروج</button>
                 <span id="user-balance" class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-3 py-1.5 rounded-xl text-xs font-bold">0 نقطة</span>
             </div>
             <div class="flex items-center gap-2">
-                <button id="admin-nav-btn" onclick="openAdminPage()" class="hidden bg-indigo-500/20 text-indigo-400 border border-indigo-500/40 px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1 transition cursor-pointer">
+                <!-- زر الانتقال لصفحة الأدمن (يظهر فقط للأدمن) -->
+                <button id="admin-nav-btn" onclick="openAdminPage()" class="hidden bg-indigo-500/20 text-indigo-400 border border-indigo-500/40 px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1 transition">
                     ⚙️ لوحة الأدمن
                 </button>
                 <h1 class="text-xl font-black text-emerald-400">⚡ ربحني</h1>
@@ -83,9 +84,9 @@
                 <h2 id="dashboard-balance" class="text-4xl font-black text-emerald-400 mt-1">0</h2>
             </div>
             <div class="grid grid-cols-3 gap-2">
-                <button onclick="switchTab('wallet')" id="tab-wallet" class="py-2 rounded-xl text-xs font-bold bg-gray-800 text-gray-300 transition cursor-pointer">المحفظة</button>
-                <button onclick="switchTab('tasks')" id="tab-tasks" class="py-2 rounded-xl text-xs font-bold bg-emerald-500 text-black transition cursor-pointer">المهام</button>
-                <button onclick="switchTab('offers')" id="tab-offers" class="py-2 rounded-xl text-xs font-bold bg-gray-800 text-gray-300 transition cursor-pointer">العروض</button>
+                <button onclick="switchTab('wallet')" id="tab-wallet" class="py-2 rounded-xl text-xs font-bold bg-gray-800 text-gray-300 transition">المحفظة</button>
+                <button onclick="switchTab('tasks')" id="tab-tasks" class="py-2 rounded-xl text-xs font-bold bg-emerald-500 text-black transition">المهام</button>
+                <button onclick="switchTab('offers')" id="tab-offers" class="py-2 rounded-xl text-xs font-bold bg-gray-800 text-gray-300 transition">العروض</button>
             </div>
         </div>
 
@@ -93,7 +94,7 @@
         <div id="view-offers" class="hidden glass p-5 rounded-2xl text-center space-y-3">
             <h3 class="text-base font-bold text-white">🎮 حائط العروض الكبرى</h3>
             <p class="text-xs text-gray-400">أكمل الألعاب والاستطلاعات لتضاف الأرباح تلقائياً</p>
-            <button onclick="openOfferwall()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-black font-bold py-3 rounded-xl text-sm transition cursor-pointer">افتح عروض ayeT-Studios</button>
+            <button onclick="openOfferwall()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-black font-bold py-3 rounded-xl text-sm transition">افتح عروض ayeT-Studios</button>
         </div>
 
         <!-- قسم المهام -->
@@ -111,16 +112,16 @@
                 <span id="wallet-min-badge" class="text-[10px] bg-amber-500/20 text-amber-400 px-2 py-1 rounded-lg">الحد الأدنى: 1000 نقطة</span>
             </div>
             <p id="wallet-rate-text" class="text-[11px] text-emerald-400 text-center font-semibold bg-emerald-500/10 p-2 rounded-xl border border-emerald-500/20">💵 كل 1000 نقطة = 1 دولار أمريكي</p>
-            <div class="space-y-3">
+            <form onsubmit="requestWithdrawal(event)" class="space-y-3">
                 <div>
-                    <input type="text" id="withdraw-wallet" placeholder="رقم فودافون كاش / انستا باي / محفظة" class="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-xs text-white focus:border-emerald-500 outline-none text-left" dir="ltr">
+                    <input type="text" id="withdraw-wallet" required placeholder="رقم فودافون كاش / انستا باي / محفظة" class="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-xs text-white focus:border-emerald-500 outline-none text-left" dir="ltr">
                 </div>
                 <div>
-                    <input type="number" id="withdraw-amount" placeholder="عدد النقاط المراد سحبها" class="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-xs text-white focus:border-emerald-500 outline-none text-left" dir="ltr">
+                    <input type="number" id="withdraw-amount" required placeholder="عدد النقاط المراد سحبها" class="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-xs text-white focus:border-emerald-500 outline-none text-left" dir="ltr">
                 </div>
-                <button type="button" onclick="requestWithdrawal()" id="withdraw-btn" class="w-full bg-emerald-500 hover:bg-emerald-600 text-black font-bold py-3 rounded-xl text-xs transition cursor-pointer">إرسال طلب السحب</button>
+                <button type="submit" id="withdraw-btn" class="w-full bg-emerald-500 hover:bg-emerald-600 text-black font-bold py-3 rounded-xl text-xs transition">إرسال طلب السحب</button>
                 <p id="withdraw-msg" class="text-center text-xs mt-1"></p>
-            </div>
+            </form>
         </div>
 
         <footer class="text-center text-[11px] text-gray-500 pt-4">
@@ -132,44 +133,49 @@
     <!-- ==================== صفحة لوحة تحكم الأدمن المستقلة ==================== -->
     <div id="admin-section" class="hidden max-w-md mx-auto p-4 space-y-4">
         
+        <!-- هيدر صفحة الأدمن -->
         <header class="flex justify-between items-center py-2 glass px-4 rounded-2xl border border-indigo-500/40">
-            <button onclick="closeAdminPage()" class="bg-gray-800 text-gray-300 border border-gray-700 px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer">← العودة للرئيسية</button>
+            <button onclick="closeAdminPage()" class="bg-gray-800 text-gray-300 border border-gray-700 px-3 py-1.5 rounded-xl text-xs font-bold transition">← العودة للرئيسية</button>
             <h1 class="text-sm font-black text-indigo-400">⚙️ لوحة إدارة المنصة</h1>
         </header>
 
+        <!-- محتوى لوحة الأدمن -->
         <div class="space-y-4">
             
+            <!-- تحكم إعدادات المحفظة والأسعار -->
             <div class="glass p-5 rounded-2xl border border-indigo-500/30 space-y-3">
                 <h3 class="text-sm font-bold text-indigo-400">⚙️ إعدادات المحفظة والأسعار</h3>
-                <div class="space-y-2.5">
+                <form onsubmit="updateSiteSettings(event)" class="space-y-2.5">
                     <div>
                         <label class="block text-[11px] text-gray-400 mb-1">عدد النقاط مقابل 1 دولار</label>
-                        <input type="number" id="setting-rate" class="w-full bg-gray-900 border border-gray-700 rounded-xl p-2.5 text-xs text-white outline-none">
+                        <input type="number" id="setting-rate" required class="w-full bg-gray-900 border border-gray-700 rounded-xl p-2.5 text-xs text-white outline-none">
                     </div>
                     <div>
                         <label class="block text-[11px] text-gray-400 mb-1">الحد الأدنى للسحب (بالنقاط)</label>
-                        <input type="number" id="setting-min" class="w-full bg-gray-900 border border-gray-700 rounded-xl p-2.5 text-xs text-white outline-none">
+                        <input type="number" id="setting-min" required class="w-full bg-gray-900 border border-gray-700 rounded-xl p-2.5 text-xs text-white outline-none">
                     </div>
                     <div>
                         <label class="block text-[11px] text-gray-400 mb-1">الحد الأقصى للسحب (بالنقاط)</label>
-                        <input type="number" id="setting-max" class="w-full bg-gray-900 border border-gray-700 rounded-xl p-2.5 text-xs text-white outline-none">
+                        <input type="number" id="setting-max" required class="w-full bg-gray-900 border border-gray-700 rounded-xl p-2.5 text-xs text-white outline-none">
                     </div>
-                    <button type="button" onclick="updateSiteSettings()" class="w-full bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2.5 rounded-xl text-xs transition cursor-pointer">حفظ إعدادات المحفظة</button>
+                    <button type="submit" class="w-full bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2.5 rounded-xl text-xs transition">حفظ إعدادات المحفظة</button>
                     <p id="settings-msg" class="text-center text-xs text-indigo-300"></p>
-                </div>
+                </form>
             </div>
 
+            <!-- 1. إضافة مهمة جديدة -->
             <div class="glass p-5 rounded-2xl border border-amber-500/30 space-y-3">
                 <h3 class="text-sm font-bold text-amber-400">👑 إضافة مهمة جديدة للمستخدمين</h3>
-                <div class="space-y-2.5">
-                    <input type="text" id="new-task-title" placeholder="عنوان المهمة (مثلاً: اشترك بالقناة)" class="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-xs text-white outline-none">
-                    <input type="number" id="new-task-reward" placeholder="النقاط (مثلاً: 50)" class="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-xs text-white outline-none">
-                    <input type="url" id="new-task-link" placeholder="رابط المهمة (https://...)" class="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-xs text-white outline-none text-left" dir="ltr">
-                    <button type="button" onclick="addNewTask()" class="w-full bg-amber-500 hover:bg-amber-600 text-black font-bold py-3 rounded-xl text-xs transition cursor-pointer">نشر المهمة</button>
+                <form onsubmit="addNewTask(event)" class="space-y-2.5">
+                    <input type="text" id="new-task-title" required placeholder="عنوان المهمة (مثلاً: اشترك بالقناة)" class="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-xs text-white outline-none">
+                    <input type="number" id="new-task-reward" required placeholder="النقاط (مثلاً: 50)" class="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-xs text-white outline-none">
+                    <input type="url" id="new-task-link" required placeholder="رابط المهمة (https://...)" class="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-xs text-white outline-none text-left" dir="ltr">
+                    <button type="submit" class="w-full bg-amber-500 hover:bg-amber-600 text-black font-bold py-3 rounded-xl text-xs transition">نشر المهمة</button>
                     <p id="admin-msg" class="text-center text-xs text-amber-300"></p>
-                </div>
+                </form>
             </div>
 
+            <!-- إدارة وتعديل المهام الحالية -->
             <div class="glass p-5 rounded-2xl border border-amber-500/30 space-y-3">
                 <h3 class="text-sm font-bold text-amber-400">⚙️ إدارة وتعديل المهام الحالية</h3>
                 <div id="admin-tasks-list" class="space-y-2.5 max-h-60 overflow-y-auto">
@@ -177,6 +183,7 @@
                 </div>
             </div>
 
+            <!-- 2. مراجعة إثباتات المهام -->
             <div class="glass p-5 rounded-2xl border border-blue-500/30 space-y-3">
                 <h3 class="text-sm font-bold text-blue-400">📋 إثباتات المهام المعلقة (بانتظار الموافقة)</h3>
                 <div id="admin-submissions-list" class="space-y-2.5 max-h-72 overflow-y-auto">
@@ -184,6 +191,7 @@
                 </div>
             </div>
 
+            <!-- 3. طلبات السحب -->
             <div class="glass p-5 rounded-2xl border border-emerald-500/30 space-y-3">
                 <h3 class="text-sm font-bold text-emerald-400">💸 طلبات السحب المعلقة</h3>
                 <div id="admin-withdrawals-list" class="space-y-2 max-h-60 overflow-y-auto">
@@ -191,6 +199,7 @@
                 </div>
             </div>
 
+            <!-- 4. إدارة المستخدمين -->
             <div class="glass p-5 rounded-2xl border border-purple-500/30 space-y-3">
                 <h3 class="text-sm font-bold text-purple-400">👥 إدارة المستخدمين (رصيد وحظر)</h3>
                 <div id="admin-users-list" class="space-y-2 max-h-72 overflow-y-auto">
@@ -206,7 +215,7 @@
     </div>
 
 
-    <!-- نافذة إثبات المهمة -->
+    <!-- نافذة منبثقة لإرسال إثبات المهمة -->
     <div id="proof-modal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
         <div class="glass w-full max-w-sm p-5 rounded-2xl space-y-3 border border-emerald-500/40">
             <h3 class="text-sm font-bold text-white">📤 تقديم إثبات تنفيذ المهمة</h3>
@@ -214,8 +223,8 @@
             <p class="text-[11px] text-gray-400">اكتب يوزرك أو رابط صفحتك:</p>
             <input type="text" id="proof-input" placeholder="اكتب الإثبات هنا..." class="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-xs text-white outline-none">
             <div class="flex gap-2 pt-1">
-                <button onclick="submitProof()" class="flex-1 bg-emerald-500 text-black font-bold py-2.5 rounded-xl text-xs cursor-pointer">إرسال للمراجعة</button>
-                <button onclick="closeProofModal()" class="flex-1 bg-gray-800 text-gray-300 font-bold py-2.5 rounded-xl text-xs cursor-pointer">إلغاء</button>
+                <button onclick="submitProof()" class="flex-1 bg-emerald-500 text-black font-bold py-2.5 rounded-xl text-xs">إرسال للمراجعة</button>
+                <button onclick="closeProofModal()" class="flex-1 bg-gray-800 text-gray-300 font-bold py-2.5 rounded-xl text-xs">إلغاء</button>
             </div>
         </div>
     </div>
@@ -238,8 +247,8 @@
                 <input type="url" id="edit-task-link" class="w-full bg-gray-900 border border-gray-700 rounded-xl p-2.5 text-xs text-white outline-none text-left" dir="ltr">
             </div>
             <div class="flex gap-2 pt-1">
-                <button onclick="updateTaskData()" class="flex-1 bg-amber-500 text-black font-bold py-2.5 rounded-xl text-xs cursor-pointer">حفظ التعديلات</button>
-                <button onclick="closeEditModal()" class="flex-1 bg-gray-800 text-gray-300 font-bold py-2.5 rounded-xl text-xs cursor-pointer">إلغاء</button>
+                <button onclick="updateTaskData()" class="flex-1 bg-amber-500 text-black font-bold py-2.5 rounded-xl text-xs">حفظ التعديلات</button>
+                <button onclick="closeEditModal()" class="flex-1 bg-gray-800 text-gray-300 font-bold py-2.5 rounded-xl text-xs">إلغاء</button>
             </div>
         </div>
     </div>
@@ -254,8 +263,8 @@
                 <textarea id="ban-reason-input" placeholder="مثلاً: تم حظر حسابك بسبب الغش أو تكرار الإثباتات الوهمية" class="w-full bg-gray-900 border border-gray-700 rounded-xl p-2.5 text-xs text-white outline-none h-24"></textarea>
             </div>
             <div class="flex gap-2 pt-1">
-                <button onclick="confirmBanUser()" class="flex-1 bg-red-600 text-white font-bold py-2.5 rounded-xl text-xs cursor-pointer">تأكيد الحظر</button>
-                <button onclick="closeBanModal()" class="flex-1 bg-gray-800 text-gray-300 font-bold py-2.5 rounded-xl text-xs cursor-pointer">إلغاء</button>
+                <button onclick="confirmBanUser()" class="flex-1 bg-red-600 text-white font-bold py-2.5 rounded-xl text-xs">تأكيد الحظر</button>
+                <button onclick="closeBanModal()" class="flex-1 bg-gray-800 text-gray-300 font-bold py-2.5 rounded-xl text-xs">إلغاء</button>
             </div>
         </div>
     </div>
@@ -272,40 +281,33 @@
         let siteSettings = { points_per_dollar: 1000, min_withdraw: 1000, max_withdraw: 50000 };
 
         window.onload = async () => {
-            try {
-                await fetchSettings();
-                const { data: { session } } = await supabaseClient.auth.getSession();
-                if (session && session.user) {
-                    await initUser(session.user);
-                }
-            } catch (err) {
-                console.error(err);
+            await fetchSettings();
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (session) {
+                await initUser(session.user);
             }
         };
 
         async function fetchSettings() {
-            try {
-                const { data } = await supabaseClient.from('site_settings').select('*').eq('id', 1).single();
-                if (data) {
-                    siteSettings = data;
-                    document.getElementById('wallet-min-badge').textContent = `الحد الأدنى: ${siteSettings.min_withdraw} نقطة`;
-                    document.getElementById('wallet-rate-text').textContent = `💵 كل ${siteSettings.points_per_dollar} نقطة = 1 دولار أمريكي`;
-                    document.getElementById('withdraw-amount').placeholder = `الحد الأدنى ${siteSettings.min_withdraw} - الأقصى ${siteSettings.max_withdraw}`;
-                }
-            } catch(e){}
+            const { data } = await supabaseClient.from('site_settings').select('*').eq('id', 1).single();
+            if (data) {
+                siteSettings = data;
+                document.getElementById('wallet-min-badge').textContent = `الحد الأدنى: ${siteSettings.min_withdraw} نقطة`;
+                document.getElementById('wallet-rate-text').textContent = `💵 كل ${siteSettings.points_per_dollar} نقطة = 1 دولار أمريكي`;
+                document.getElementById('withdraw-amount').placeholder = `الحد الأدنى ${siteSettings.min_withdraw} - الأقصى ${siteSettings.max_withdraw}`;
+            }
         }
 
         async function handleAuth(type) {
             const email = document.getElementById('auth-email').value.trim();
             const password = document.getElementById('auth-password').value.trim();
             const msg = document.getElementById('auth-msg');
-            
+            msg.textContent = 'جاري المعالجة...';
+
             if (!email || !password) {
-                msg.textContent = '❌ يرجى إدخال البريد الإلكتروني وكلمة المرور';
+                msg.textContent = 'يرجى إدخال البريد الإلكتروني وكلمة المرور';
                 return;
             }
-
-            msg.textContent = 'جاري المعالجة...';
 
             let res;
             if (type === 'login') {
@@ -317,11 +319,7 @@
             if (res.error) {
                 msg.textContent = 'خطأ: ' + res.error.message;
             } else if (res.data.user) {
-                msg.textContent = '✅ تم الدخول بنجاح!';
                 await initUser(res.data.user);
-            } else if (res.data.session && res.data.session.user) {
-                msg.textContent = '✅ تم الدخول بنجاح!';
-                await initUser(res.data.session.user);
             }
         }
 
@@ -357,11 +355,11 @@
             updateBalanceUI();
 
             document.getElementById('auth-section').classList.add('hidden');
-            document.getElementById('banned-section').classList.add('hidden');
             document.getElementById('app-section').classList.remove('hidden');
 
             await loadTasks();
 
+            // إذا كان المستخدم هو الأدمن، أظهر له زر الانتقال لصفحة الأدمن
             if (user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
                 document.getElementById('admin-nav-btn').classList.remove('hidden');
                 document.getElementById('setting-rate').value = siteSettings.points_per_dollar;
@@ -369,8 +367,30 @@
                 document.getElementById('setting-max').value = siteSettings.max_withdraw;
                 await loadAdminData();
             }
+
+            // الاستماع اللحظي لتحديثات الرصيد أو الحظر
+            supabaseClient
+                .channel('public:profiles:id=eq.' + user.id)
+                .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'profiles', filter: 'id=eq.' + user.id }, payload => {
+                    const newProfile = payload.new;
+                    if (newProfile.is_banned) {
+                        alert('🚫 تم حظر حسابك: ' + (newProfile.ban_reason || 'مخالفة الشروط'));
+                        logout();
+                    } else {
+                        const diff = newProfile.balance - currentBalance;
+                        currentBalance = newProfile.balance;
+                        updateBalanceUI();
+                        if (diff > 0) {
+                            alert(`🎉 مبروك! تمت إضافة ${diff} نقطة إلى حسابك من إحدى المهام.`);
+                        } else if (diff < 0) {
+                            alert(`⚠️ تنبيه: تم خصم ${Math.abs(diff)} نقطة من حسابك بسبب الغش أو عدم صحة الإثبات!`);
+                        }
+                    }
+                })
+                .subscribe();
         }
 
+        // دوال التنقل بين صفحات الأدمن والمستخدم
         function openAdminPage() {
             document.getElementById('app-section').classList.add('hidden');
             document.getElementById('admin-section').classList.remove('hidden');
@@ -404,45 +424,51 @@
         }
 
         async function loadTasks() {
-            try {
-                const tasksList = document.getElementById('tasks-list');
-                const { data: tasks } = await supabaseClient.from('site_tasks').select('*').order('id', { ascending: false });
-                const { data: submissions } = await supabaseClient.from('task_submissions').select('task_id, status').eq('user_id', currentUser.id);
+            const tasksList = document.getElementById('tasks-list');
+            
+            const { data: tasks } = await supabaseClient
+                .from('site_tasks')
+                .select('*')
+                .order('id', { ascending: false });
 
-                const subMap = {};
-                if (submissions) {
-                    submissions.forEach(s => { subMap[s.task_id] = s.status; });
+            const { data: submissions } = await supabaseClient
+                .from('task_submissions')
+                .select('task_id, status')
+                .eq('user_id', currentUser.id);
+
+            const subMap = {};
+            if (submissions) {
+                submissions.forEach(s => { subMap[s.task_id] = s.status; });
+            }
+
+            if (!tasks || tasks.length === 0) {
+                tasksList.innerHTML = '<p class="text-xs text-gray-400 text-center py-2">لا توجد مهام متاحة حالياً</p>';
+                return;
+            }
+
+            tasksList.innerHTML = '';
+            tasks.forEach(task => {
+                const status = subMap[task.id];
+                let btnHtml = '';
+
+                if (status === 'pending') {
+                    btnHtml = `<span class="text-[11px] bg-amber-500/20 text-amber-400 px-3 py-1.5 rounded-xl font-bold">⏳ قيد المراجعة</span>`;
+                } else if (status === 'approved') {
+                    btnHtml = `<span class="text-[11px] bg-emerald-500/20 text-emerald-400 px-3 py-1.5 rounded-xl font-bold">✅ تم التنفيذ</span>`;
+                } else {
+                    btnHtml = `<button onclick="openProofModal(${task.id}, '${task.title.replace(/'/g, "\\'")}', '${task.link}')" class="bg-emerald-500 hover:bg-emerald-600 text-black text-xs font-bold px-4 py-2 rounded-xl transition">تنفيذ وإثبات</button>`;
                 }
 
-                if (!tasks || tasks.length === 0) {
-                    tasksList.innerHTML = '<p class="text-xs text-gray-400 text-center py-2">لا توجد مهام متاحة حالياً</p>';
-                    return;
-                }
-
-                tasksList.innerHTML = '';
-                tasks.forEach(task => {
-                    const status = subMap[task.id];
-                    let btnHtml = '';
-
-                    if (status === 'pending') {
-                        btnHtml = `<span class="text-[11px] bg-amber-500/20 text-amber-400 px-3 py-1.5 rounded-xl font-bold">⏳ قيد المراجعة</span>`;
-                    } else if (status === 'approved') {
-                        btnHtml = `<span class="text-[11px] bg-emerald-500/20 text-emerald-400 px-3 py-1.5 rounded-xl font-bold">✅ تم التنفيذ</span>`;
-                    } else {
-                        btnHtml = `<button onclick="openProofModal(${task.id}, '${task.title.replace(/'/g, "\\'")}', '${task.link}')" class="bg-emerald-500 hover:bg-emerald-600 text-black text-xs font-bold px-4 py-2 rounded-xl transition cursor-pointer">تنفيذ وإثبات</button>`;
-                    }
-
-                    tasksList.innerHTML += `
-                        <div class="bg-gray-900/80 p-3.5 rounded-xl flex justify-between items-center border border-gray-800">
-                            <div>
-                                <p class="text-xs font-bold text-gray-100">${task.title}</p>
-                                <span class="text-[11px] text-emerald-400 font-semibold">+${task.reward} نقطة</span>
-                            </div>
-                            ${btnHtml}
+                tasksList.innerHTML += `
+                    <div class="bg-gray-900/80 p-3.5 rounded-xl flex justify-between items-center border border-gray-800">
+                        <div>
+                            <p class="text-xs font-bold text-gray-100">${task.title}</p>
+                            <span class="text-[11px] text-emerald-400 font-semibold">+${task.reward} نقطة</span>
                         </div>
-                    `;
-                });
-            } catch(e){}
+                        ${btnHtml}
+                    </div>
+                `;
+            });
         }
 
         function openProofModal(taskId, title, link) {
@@ -485,17 +511,12 @@
             }
         }
 
-        async function requestWithdrawal() {
+        async function requestWithdrawal(e) {
+            e.preventDefault();
             const wallet = document.getElementById('withdraw-wallet').value.trim();
             const amount = parseInt(document.getElementById('withdraw-amount').value);
             const msg = document.getElementById('withdraw-msg');
             const btn = document.getElementById('withdraw-btn');
-
-            if (!wallet) {
-                msg.className = 'text-center text-xs text-red-400 mt-1';
-                msg.textContent = '❌ يرجى إدخال معلومات المحفظة!';
-                return;
-            }
 
             if (isNaN(amount) || amount < siteSettings.min_withdraw) {
                 msg.className = 'text-center text-xs text-red-400 mt-1';
@@ -551,7 +572,8 @@
         }
 
         // ================= دوال لوحة الأدمن =================
-        async function updateSiteSettings() {
+        async function updateSiteSettings(e) {
+            e.preventDefault();
             const rate = parseInt(document.getElementById('setting-rate').value);
             const min = parseInt(document.getElementById('setting-min').value);
             const max = parseInt(document.getElementById('setting-max').value);
@@ -570,16 +592,12 @@
             }
         }
 
-        async function addNewTask() {
+        async function addNewTask(e) {
+            e.preventDefault();
             const title = document.getElementById('new-task-title').value.trim();
             const reward = parseInt(document.getElementById('new-task-reward').value);
             const link = document.getElementById('new-task-link').value.trim();
             const msg = document.getElementById('admin-msg');
-
-            if (!title || isNaN(reward) || !link) {
-                msg.textContent = '❌ يرجى ملء كافة حقول المهمة!';
-                return;
-            }
 
             const { error } = await supabaseClient.from('site_tasks').insert([{ title, reward, link }]);
             if (!error) {
@@ -593,100 +611,98 @@
         }
 
         async function loadAdminData() {
-            try {
-                const adminTasksList = document.getElementById('admin-tasks-list');
-                const { data: tasks } = await supabaseClient.from('site_tasks').select('*').order('id', { ascending: false });
+            const adminTasksList = document.getElementById('admin-tasks-list');
+            const { data: tasks } = await supabaseClient.from('site_tasks').select('*').order('id', { ascending: false });
 
-                if (tasks && tasks.length > 0) {
-                    adminTasksList.innerHTML = '';
-                    tasks.forEach(t => {
-                        adminTasksList.innerHTML += `
-                            <div class="bg-gray-900 p-3 rounded-xl border border-gray-800 flex justify-between items-center">
-                                <div>
-                                    <p class="text-xs font-bold text-white">${t.title}</p>
-                                    <span class="text-[10px] text-emerald-400 font-semibold">${t.reward} نقطة</span>
-                                </div>
-                                <div class="flex gap-1.5">
-                                    <button onclick="openEditModal(${t.id}, '${t.title.replace(/'/g, "\\'")}', ${t.reward}, '${t.link}')" class="bg-amber-500/20 text-amber-400 text-[10px] font-bold px-3 py-1.5 rounded-lg cursor-pointer">تعديل</button>
-                                    <button onclick="deleteTask(${t.id})" class="bg-red-500/20 text-red-400 text-[10px] font-bold px-3 py-1.5 rounded-lg cursor-pointer">حذف</button>
-                                </div>
+            if (tasks && tasks.length > 0) {
+                adminTasksList.innerHTML = '';
+                tasks.forEach(t => {
+                    adminTasksList.innerHTML += `
+                        <div class="bg-gray-900 p-3 rounded-xl border border-gray-800 flex justify-between items-center">
+                            <div>
+                                <p class="text-xs font-bold text-white">${t.title}</p>
+                                <span class="text-[10px] text-emerald-400 font-semibold">${t.reward} نقطة</span>
                             </div>
-                        `;
-                    });
-                } else {
-                    adminTasksList.innerHTML = '<p class="text-xs text-gray-400 text-center py-2">لا توجد مهام حالياً</p>';
-                }
-
-                const subsList = document.getElementById('admin-submissions-list');
-                const { data: subs } = await supabaseClient.from('task_submissions').select('*').eq('status', 'pending').order('created_at', { ascending: false });
-
-                if (subs && subs.length > 0) {
-                    subsList.innerHTML = '';
-                    subs.forEach(s => {
-                        const safeProof = s.proof_text.replace(/'/g, "\\'").replace(/"/g, '&quot;');
-                        subsList.innerHTML += `
-                            <div class="bg-gray-900 p-3 rounded-xl border border-gray-800 flex flex-col gap-2">
-                                <div class="flex justify-between items-center">
-                                    <span class="text-[11px] font-bold text-emerald-400">${s.task_title || 'مهمة'}</span>
-                                    <span class="text-[10px] text-gray-400">${s.user_email || ''}</span>
-                                </div>
-                                <div class="flex justify-between items-center bg-gray-950 p-2 rounded-lg">
-                                    <p class="text-xs text-gray-300 truncate max-w-[200px]">الإثبات: <span class="text-amber-400 font-bold">${s.proof_text}</span></p>
-                                    <button onclick="copyToClipboard('${safeProof}')" class="bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 text-[10px] font-bold px-3 py-1.5 rounded-lg transition cursor-pointer">📋 نسخ الإثبات</button>
-                                </div>
-                                <button onclick="approveSubmission(${s.id}, '${s.user_id}', ${s.task_id})" class="bg-emerald-500 hover:bg-emerald-600 text-black text-xs font-bold py-2 rounded-xl transition cursor-pointer">✅ الموافقة وإضافة الأرباح</button>
+                            <div class="flex gap-1.5">
+                                <button onclick="openEditModal(${t.id}, '${t.title.replace(/'/g, "\\'")}', ${t.reward}, '${t.link}')" class="bg-amber-500/20 text-amber-400 text-[10px] font-bold px-3 py-1.5 rounded-lg">تعديل</button>
+                                <button onclick="deleteTask(${t.id})" class="bg-red-500/20 text-red-400 text-[10px] font-bold px-3 py-1.5 rounded-lg">حذف</button>
                             </div>
-                        `;
-                    });
-                } else {
-                    subsList.innerHTML = '<p class="text-xs text-gray-400 text-center py-2">لا توجد إثباتات معلقة</p>';
-                }
+                        </div>
+                    `;
+                });
+            } else {
+                adminTasksList.innerHTML = '<p class="text-xs text-gray-400 text-center py-2">لا توجد مهام حالياً</p>';
+            }
 
-                const wList = document.getElementById('admin-withdrawals-list');
-                const { data: withdrawals } = await supabaseClient.from('withdrawals').select('*').order('created_at', { ascending: false });
-                if (withdrawals && withdrawals.length > 0) {
-                    wList.innerHTML = '';
-                    withdrawals.forEach(w => {
-                        wList.innerHTML += `
-                            <div class="bg-gray-900 p-3 rounded-xl border border-gray-800 flex justify-between items-center">
-                                <div>
-                                    <p class="text-[11px] font-bold text-white">${w.wallet_info}</p>
-                                    <p class="text-[10px] text-gray-400">${w.email} • <span class="text-amber-400 font-bold">${w.amount} نقطة</span></p>
-                                </div>
-                                <span class="text-[10px] px-2 py-1 rounded-lg bg-amber-500/20 text-amber-300">${w.status}</span>
-                            </div>
-                        `;
-                    });
-                } else {
-                    wList.innerHTML = '<p class="text-xs text-gray-400 text-center py-2">لا توجد طلبات سحب حالياً</p>';
-                }
+            const subsList = document.getElementById('admin-submissions-list');
+            const { data: subs } = await supabaseClient.from('task_submissions').select('*').eq('status', 'pending').order('created_at', { ascending: false });
 
-                const usersList = document.getElementById('admin-users-list');
-                const { data: users } = await supabaseClient.from('profiles').select('*').order('balance', { ascending: false });
-                if (users && users.length > 0) {
-                    usersList.innerHTML = '';
-                    users.forEach(u => {
-                        const isBanned = u.is_banned === true;
-                        usersList.innerHTML += `
-                            <div class="bg-gray-900 p-3 rounded-xl border ${isBanned ? 'border-red-500/50' : 'border-gray-800'} flex flex-col gap-2">
-                                <div class="flex justify-between items-center">
-                                    <span class="text-[11px] font-bold text-gray-200 truncate max-w-[180px]">${u.email || u.id}</span>
-                                    <span class="text-xs font-black text-emerald-400">${u.balance || 0} نقطة</span>
-                                </div>
-                                <div class="flex gap-1.5">
-                                    <button onclick="modifyUserBalance('${u.id}', ${u.balance || 0}, 50)" class="flex-1 bg-emerald-500/20 text-emerald-400 text-[10px] font-bold py-1.5 rounded-lg cursor-pointer">+50 نقطة</button>
-                                    <button onclick="modifyUserBalance('${u.id}', ${u.balance || 0}, -50)" class="flex-1 bg-amber-500/20 text-amber-400 text-[10px] font-bold py-1.5 rounded-lg cursor-pointer">-50 نقطة</button>
-                                    <button onclick="promptBanUser('${u.id}', ${isBanned})" class="flex-1 ${isBanned ? 'bg-blue-500/20 text-blue-400' : 'bg-red-500/20 text-red-400'} text-[10px] font-bold py-1.5 rounded-lg cursor-pointer">
-                                        ${isBanned ? 'فك الحظر' : 'حظر'}
-                                    </button>
-                                </div>
+            if (subs && subs.length > 0) {
+                subsList.innerHTML = '';
+                subs.forEach(s => {
+                    const safeProof = s.proof_text.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                    subsList.innerHTML += `
+                        <div class="bg-gray-900 p-3 rounded-xl border border-gray-800 flex flex-col gap-2">
+                            <div class="flex justify-between items-center">
+                                <span class="text-[11px] font-bold text-emerald-400">${s.task_title || 'مهمة'}</span>
+                                <span class="text-[10px] text-gray-400">${s.user_email || ''}</span>
                             </div>
-                        `;
-                    });
-                } else {
-                    usersList.innerHTML = '<p class="text-xs text-gray-400 text-center py-2">لا توجد مستخدمين مسجلين</p>';
-                }
-            } catch(e){}
+                            <div class="flex justify-between items-center bg-gray-950 p-2 rounded-lg">
+                                <p class="text-xs text-gray-300 truncate max-w-[200px]">الإثبات: <span class="text-amber-400 font-bold">${s.proof_text}</span></p>
+                                <button onclick="copyToClipboard('${safeProof}')" class="bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 text-[10px] font-bold px-3 py-1.5 rounded-lg transition">📋 نسخ الإثبات</button>
+                            </div>
+                            <button onclick="approveSubmission(${s.id}, '${s.user_id}', ${s.task_id})" class="bg-emerald-500 hover:bg-emerald-600 text-black text-xs font-bold py-2 rounded-xl transition">✅ الموافقة وإضافة الأرباح</button>
+                        </div>
+                    `;
+                });
+            } else {
+                subsList.innerHTML = '<p class="text-xs text-gray-400 text-center py-2">لا توجد إثباتات معلقة</p>';
+            }
+
+            const wList = document.getElementById('admin-withdrawals-list');
+            const { data: withdrawals } = await supabaseClient.from('withdrawals').select('*').order('created_at', { ascending: false });
+            if (withdrawals && withdrawals.length > 0) {
+                wList.innerHTML = '';
+                withdrawals.forEach(w => {
+                    wList.innerHTML += `
+                        <div class="bg-gray-900 p-3 rounded-xl border border-gray-800 flex justify-between items-center">
+                            <div>
+                                <p class="text-[11px] font-bold text-white">${w.wallet_info}</p>
+                                <p class="text-[10px] text-gray-400">${w.email} • <span class="text-amber-400 font-bold">${w.amount} نقطة</span></p>
+                            </div>
+                            <span class="text-[10px] px-2 py-1 rounded-lg bg-amber-500/20 text-amber-300">${w.status}</span>
+                        </div>
+                    `;
+                });
+            } else {
+                wList.innerHTML = '<p class="text-xs text-gray-400 text-center py-2">لا توجد طلبات سحب حالياً</p>';
+            }
+
+            const usersList = document.getElementById('admin-users-list');
+            const { data: users } = await supabaseClient.from('profiles').select('*').order('balance', { ascending: false });
+            if (users && users.length > 0) {
+                usersList.innerHTML = '';
+                users.forEach(u => {
+                    const isBanned = u.is_banned === true;
+                    usersList.innerHTML += `
+                        <div class="bg-gray-900 p-3 rounded-xl border ${isBanned ? 'border-red-500/50' : 'border-gray-800'} flex flex-col gap-2">
+                            <div class="flex justify-between items-center">
+                                <span class="text-[11px] font-bold text-gray-200 truncate max-w-[180px]">${u.email || u.id}</span>
+                                <span class="text-xs font-black text-emerald-400">${u.balance || 0} نقطة</span>
+                            </div>
+                            <div class="flex gap-1.5">
+                                <button onclick="modifyUserBalance('${u.id}', ${u.balance || 0}, 50)" class="flex-1 bg-emerald-500/20 text-emerald-400 text-[10px] font-bold py-1.5 rounded-lg">+50 نقطة</button>
+                                <button onclick="modifyUserBalance('${u.id}', ${u.balance || 0}, -50)" class="flex-1 bg-amber-500/20 text-amber-400 text-[10px] font-bold py-1.5 rounded-lg">-50 نقطة</button>
+                                <button onclick="promptBanUser('${u.id}', ${isBanned})" class="flex-1 ${isBanned ? 'bg-blue-500/20 text-blue-400' : 'bg-red-500/20 text-red-400'} text-[10px] font-bold py-1.5 rounded-lg">
+                                    ${isBanned ? 'فك الحظر' : 'حظر'}
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                });
+            } else {
+                usersList.innerHTML = '<p class="text-xs text-gray-400 text-center py-2">لا توجد مستخدمين مسجلين</p>';
+            }
         }
 
         function openEditModal(id, title, reward, link) {
@@ -798,13 +814,9 @@
         }
 
         async function logout() {
-            try {
-                await supabaseClient.auth.signOut();
-            } catch(e){}
-            localStorage.clear();
-            sessionStorage.clear();
+            await supabaseClient.auth.signOut();
             location.reload();
         }
     </script>
 </body>
-</html>
+            </html>
