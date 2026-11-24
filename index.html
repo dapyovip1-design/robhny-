@@ -148,7 +148,7 @@
                 </div>
             </div>
 
-            <!-- 4. إدارة المستخدمين (مع أزرار الرصيد والحظر) -->
+            <!-- 4. إدارة المستخدمين -->
             <div class="glass p-5 rounded-2xl border border-purple-500/30 space-y-3">
                 <h3 class="text-sm font-bold text-purple-400">👥 إدارة المستخدمين (رصيد وحظر)</h3>
                 <div id="admin-users-list" class="space-y-2 max-h-72 overflow-y-auto">
@@ -425,6 +425,7 @@
                 document.getElementById('new-task-title').value = '';
                 document.getElementById('new-task-reward').value = '';
                 document.getElementById('new-task-link').value = '';
+                await loadTasks();
             }
         }
 
