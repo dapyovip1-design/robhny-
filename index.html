@@ -31,7 +31,8 @@
                 <h1 class="text-3xl font-black text-emerald-400">⚡ ربحني</h1>
                 <p class="text-xs text-gray-400 mt-1">أكمل المهام وقدم إثبات التنفيذ واسحب أرباحك</p>
             </div>
-            <form id="auth-form" class="space-y-4" onsubmit="event.preventDefault();">
+            <!-- تم استبدال الـ form العادي بـ div عادي لمنع أي تجميد أو إعادة تحميل للصفحة -->
+            <div class="space-y-4">
                 <div>
                     <label class="block text-xs text-gray-400 mb-1">البريد الإلكتروني</label>
                     <input type="email" id="auth-email" required placeholder="example@gmail.com" class="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-sm text-white focus:border-emerald-500 outline-none text-left" dir="ltr">
@@ -41,11 +42,11 @@
                     <input type="password" id="auth-password" required placeholder="••••••••" class="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-sm text-white focus:border-emerald-500 outline-none text-left" dir="ltr">
                 </div>
                 <div class="flex gap-2 pt-2">
-                    <button type="button" onclick="handleAuth('login')" class="flex-1 bg-emerald-500 hover:bg-emerald-600 text-black font-bold py-3 rounded-xl text-sm transition">تسجيل الدخول</button>
-                    <button type="button" onclick="handleAuth('signup')" class="flex-1 bg-gray-800 hover:bg-gray-700 text-white font-bold py-3 rounded-xl text-sm border border-gray-700 transition">حساب جديد</button>
+                    <button type="button" onclick="handleAuth('login')" class="flex-1 bg-emerald-500 hover:bg-emerald-600 text-black font-bold py-3 rounded-xl text-sm transition cursor-pointer">تسجيل الدخول</button>
+                    <button type="button" onclick="handleAuth('signup')" class="flex-1 bg-gray-800 hover:bg-gray-700 text-white font-bold py-3 rounded-xl text-sm border border-gray-700 transition cursor-pointer">حساب جديد</button>
                 </div>
-                <p id="auth-msg" class="text-center text-xs text-amber-400 mt-2"></p>
-            </form>
+                <p id="auth-msg" class="text-center text-xs text-amber-400 mt-2 font-bold"></p>
+            </div>
         </div>
     </div>
 
@@ -55,7 +56,7 @@
             <div class="text-5xl mb-4">🚫</div>
             <h2 class="text-xl font-black text-red-500 mb-2">تم حظر حسابك!</h2>
             <p id="ban-reason-text" class="text-xs text-gray-400 mb-6">تم إيقاف هذا الحساب لمخالفة شروط الاستخدام.</p>
-            <button onclick="logout()" class="bg-red-600 text-white text-xs font-bold px-6 py-2.5 rounded-xl">تسجيل الخروج</button>
+            <button onclick="logout()" class="bg-red-600 text-white text-xs font-bold px-6 py-2.5 rounded-xl cursor-pointer">تسجيل الخروج</button>
         </div>
     </div>
 
@@ -67,22 +68,22 @@
             <div class="flex items-center gap-2">
                 <!-- زر القائمة (3 شرط ☰) -->
                 <div class="relative">
-                    <button onclick="toggleMenuDropdown()" class="bg-gray-800 hover:bg-gray-700 border border-gray-700 px-3 py-2 rounded-xl text-sm font-bold transition flex items-center gap-1">
+                    <button onclick="toggleMenuDropdown()" class="bg-gray-800 hover:bg-gray-700 border border-gray-700 px-3 py-2 rounded-xl text-sm font-bold transition flex items-center gap-1 cursor-pointer">
                         ☰
                     </button>
                     <!-- القائمة المنسدلة -->
                     <div id="menu-dropdown" class="hidden absolute top-12 right-0 glass w-44 rounded-2xl p-2 shadow-2xl border border-gray-700 z-50 space-y-1.5">
-                        <button id="dropdown-admin-btn" onclick="openAdminPage(); toggleMenuDropdown();" class="hidden w-full text-right bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500/30 px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2">
+                        <button id="dropdown-admin-btn" onclick="openAdminPage(); toggleMenuDropdown();" class="hidden w-full text-right bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500/30 px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer">
                             ⚙️ لوحة الأدمن
                         </button>
-                        <button onclick="logout()" class="w-full text-right bg-red-500/20 text-red-400 hover:bg-red-500/30 px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2">
+                        <button onclick="logout()" class="w-full text-right bg-red-500/20 text-red-400 hover:bg-red-500/30 px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer">
                             🚪 تسجيل الخروج
                         </button>
                     </div>
                 </div>
 
                 <!-- أيقونة الجرس للإشعارات -->
-                <button onclick="openNotificationsModal()" class="relative bg-gray-800 hover:bg-gray-700 border border-gray-700 p-2 rounded-xl text-sm transition">
+                <button onclick="openNotificationsModal()" class="relative bg-gray-800 hover:bg-gray-700 border border-gray-700 p-2 rounded-xl text-sm transition cursor-pointer">
                     🔔
                     <span id="notif-badge" class="absolute -top-1 -right-1 hidden bg-red-500 text-white text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center">0</span>
                 </button>
@@ -100,9 +101,9 @@
                 <h2 id="dashboard-balance" class="text-4xl font-black text-emerald-400 mt-1">0</h2>
             </div>
             <div class="grid grid-cols-3 gap-2">
-                <button onclick="switchTab('wallet')" id="tab-wallet" class="py-2 rounded-xl text-xs font-bold bg-gray-800 text-gray-300 transition">المحفظة</button>
-                <button onclick="switchTab('tasks')" id="tab-tasks" class="py-2 rounded-xl text-xs font-bold bg-emerald-500 text-black transition">المهام</button>
-                <button onclick="switchTab('offers')" id="tab-offers" class="py-2 rounded-xl text-xs font-bold bg-gray-800 text-gray-300 transition">العروض</button>
+                <button onclick="switchTab('wallet')" id="tab-wallet" class="py-2 rounded-xl text-xs font-bold bg-gray-800 text-gray-300 transition cursor-pointer">المحفظة</button>
+                <button onclick="switchTab('tasks')" id="tab-tasks" class="py-2 rounded-xl text-xs font-bold bg-emerald-500 text-black transition cursor-pointer">المهام</button>
+                <button onclick="switchTab('offers')" id="tab-offers" class="py-2 rounded-xl text-xs font-bold bg-gray-800 text-gray-300 transition cursor-pointer">العروض</button>
             </div>
         </div>
 
@@ -110,7 +111,7 @@
         <div id="view-offers" class="hidden glass p-5 rounded-2xl text-center space-y-3">
             <h3 class="text-base font-bold text-white">🎮 حائط العروض الكبرى</h3>
             <p class="text-xs text-gray-400">أكمل الألعاب والاستطلاعات لتضاف الأرباح تلقائياً</p>
-            <button onclick="openOfferwall()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-black font-bold py-3 rounded-xl text-sm transition">افتح عروض ayeT-Studios</button>
+            <button onclick="openOfferwall()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-black font-bold py-3 rounded-xl text-sm transition cursor-pointer">افتح عروض ayeT-Studios</button>
         </div>
 
         <!-- قسم المهام -->
@@ -128,16 +129,16 @@
                 <span id="wallet-min-badge" class="text-[10px] bg-amber-500/20 text-amber-400 px-2 py-1 rounded-lg">الحد الأدنى: 1000 نقطة</span>
             </div>
             <p id="wallet-rate-text" class="text-[11px] text-emerald-400 text-center font-semibold bg-emerald-500/10 p-2 rounded-xl border border-emerald-500/20">💵 كل 1000 نقطة = 1 دولار أمريكي</p>
-            <form onsubmit="requestWithdrawal(event)" class="space-y-3">
+            <div class="space-y-3">
                 <div>
                     <input type="text" id="withdraw-wallet" required placeholder="رقم فودافون كاش / انستا باي / محفظة" class="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-xs text-white focus:border-emerald-500 outline-none text-left" dir="ltr">
                 </div>
                 <div>
                     <input type="number" id="withdraw-amount" required placeholder="عدد النقاط المراد سحبها" class="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-xs text-white focus:border-emerald-500 outline-none text-left" dir="ltr">
                 </div>
-                <button type="submit" id="withdraw-btn" class="w-full bg-emerald-500 hover:bg-emerald-600 text-black font-bold py-3 rounded-xl text-xs transition">إرسال طلب السحب</button>
+                <button type="button" onclick="requestWithdrawal()" id="withdraw-btn" class="w-full bg-emerald-500 hover:bg-emerald-600 text-black font-bold py-3 rounded-xl text-xs transition cursor-pointer">إرسال طلب السحب</button>
                 <p id="withdraw-msg" class="text-center text-xs mt-1"></p>
-            </form>
+            </div>
         </div>
 
         <footer class="text-center text-[11px] text-gray-500 pt-4">
@@ -152,20 +153,20 @@
         <header class="flex justify-between items-center py-2 glass px-4 rounded-2xl border border-indigo-500/40 relative">
             <div class="flex items-center gap-2">
                 <div class="relative">
-                    <button onclick="toggleAdminMenuDropdown()" class="bg-gray-800 hover:bg-gray-700 border border-gray-700 px-3 py-2 rounded-xl text-sm font-bold transition flex items-center gap-1">
+                    <button onclick="toggleAdminMenuDropdown()" class="bg-gray-800 hover:bg-gray-700 border border-gray-700 px-3 py-2 rounded-xl text-sm font-bold transition flex items-center gap-1 cursor-pointer">
                         ☰
                     </button>
                     <div id="admin-menu-dropdown" class="hidden absolute top-12 right-0 glass w-44 rounded-2xl p-2 shadow-2xl border border-gray-700 z-50 space-y-1.5">
-                        <button onclick="closeAdminPage(); toggleAdminMenuDropdown();" class="w-full text-right bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2">
+                        <button onclick="closeAdminPage(); toggleAdminMenuDropdown();" class="w-full text-right bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer">
                             🏠 واجهة المستخدم
                         </button>
-                        <button onclick="logout()" class="w-full text-right bg-red-500/20 text-red-400 hover:bg-red-500/30 px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2">
+                        <button onclick="logout()" class="w-full text-right bg-red-500/20 text-red-400 hover:bg-red-500/30 px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer">
                             🚪 تسجيل الخروج
                         </button>
                     </div>
                 </div>
 
-                <button onclick="openNotificationsModal()" class="relative bg-gray-800 hover:bg-gray-700 border border-gray-700 p-2 rounded-xl text-sm transition">
+                <button onclick="openNotificationsModal()" class="relative bg-gray-800 hover:bg-gray-700 border border-gray-700 p-2 rounded-xl text-sm transition cursor-pointer">
                     🔔
                     <span id="admin-notif-badge" class="absolute -top-1 -right-1 hidden bg-red-500 text-white text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center">0</span>
                 </button>
@@ -178,33 +179,33 @@
             
             <div class="glass p-5 rounded-2xl border border-indigo-500/30 space-y-3">
                 <h3 class="text-sm font-bold text-indigo-400">⚙️ إعدادات المحفظة والأسعار</h3>
-                <form onsubmit="updateSiteSettings(event)" class="space-y-2.5">
+                <div class="space-y-2.5">
                     <div>
                         <label class="block text-[11px] text-gray-400 mb-1">عدد النقاط مقابل 1 دولار</label>
-                        <input type="number" id="setting-rate" required class="w-full bg-gray-900 border border-gray-700 rounded-xl p-2.5 text-xs text-white outline-none">
+                        <input type="number" id="setting-rate" class="w-full bg-gray-900 border border-gray-700 rounded-xl p-2.5 text-xs text-white outline-none">
                     </div>
                     <div>
                         <label class="block text-[11px] text-gray-400 mb-1">الحد الأدنى للسحب (بالنقاط)</label>
-                        <input type="number" id="setting-min" required class="w-full bg-gray-900 border border-gray-700 rounded-xl p-2.5 text-xs text-white outline-none">
+                        <input type="number" id="setting-min" class="w-full bg-gray-900 border border-gray-700 rounded-xl p-2.5 text-xs text-white outline-none">
                     </div>
                     <div>
                         <label class="block text-[11px] text-gray-400 mb-1">الحد الأقصى للسحب (بالنقاط)</label>
-                        <input type="number" id="setting-max" required class="w-full bg-gray-900 border border-gray-700 rounded-xl p-2.5 text-xs text-white outline-none">
+                        <input type="number" id="setting-max" class="w-full bg-gray-900 border border-gray-700 rounded-xl p-2.5 text-xs text-white outline-none">
                     </div>
-                    <button type="submit" class="w-full bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2.5 rounded-xl text-xs transition">حفظ إعدادات المحفظة</button>
+                    <button type="button" onclick="updateSiteSettings()" class="w-full bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2.5 rounded-xl text-xs transition cursor-pointer">حفظ إعدادات المحفظة</button>
                     <p id="settings-msg" class="text-center text-xs text-indigo-300"></p>
-                </form>
+                </div>
             </div>
 
             <div class="glass p-5 rounded-2xl border border-amber-500/30 space-y-3">
                 <h3 class="text-sm font-bold text-amber-400">👑 إضافة مهمة جديدة للمستخدمين</h3>
-                <form onsubmit="addNewTask(event)" class="space-y-2.5">
-                    <input type="text" id="new-task-title" required placeholder="عنوان المهمة (مثلاً: اشترك بالقناة)" class="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-xs text-white outline-none">
-                    <input type="number" id="new-task-reward" required placeholder="النقاط (مثلاً: 50)" class="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-xs text-white outline-none">
-                    <input type="url" id="new-task-link" required placeholder="رابط المهمة (https://...)" class="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-xs text-white outline-none text-left" dir="ltr">
-                    <button type="submit" class="w-full bg-amber-500 hover:bg-amber-600 text-black font-bold py-3 rounded-xl text-xs transition">نشر المهمة</button>
+                <div class="space-y-2.5">
+                    <input type="text" id="new-task-title" placeholder="عنوان المهمة (مثلاً: اشترك بالقناة)" class="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-xs text-white outline-none">
+                    <input type="number" id="new-task-reward" placeholder="النقاط (مثلاً: 50)" class="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-xs text-white outline-none">
+                    <input type="url" id="new-task-link" placeholder="رابط المهمة (https://...)" class="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-xs text-white outline-none text-left" dir="ltr">
+                    <button type="button" onclick="addNewTask()" class="w-full bg-amber-500 hover:bg-amber-600 text-black font-bold py-3 rounded-xl text-xs transition cursor-pointer">نشر المهمة</button>
                     <p id="admin-msg" class="text-center text-xs text-amber-300"></p>
-                </form>
+                </div>
             </div>
 
             <div class="glass p-5 rounded-2xl border border-amber-500/30 space-y-3">
@@ -248,12 +249,12 @@
         <div class="glass w-full max-w-sm p-5 rounded-2xl space-y-3 border border-gray-700 max-h-[80vh] flex flex-col">
             <div class="flex justify-between items-center border-b border-gray-800 pb-2">
                 <h3 class="text-sm font-bold text-white flex items-center gap-1.5">🔔 سجل الإشعارات والرسائل</h3>
-                <button onclick="closeNotificationsModal()" class="text-gray-400 hover:text-white text-xs font-bold">✕</button>
+                <button onclick="closeNotificationsModal()" class="text-gray-400 hover:text-white text-xs font-bold cursor-pointer">✕</button>
             </div>
             <div id="notifications-list" class="space-y-2.5 overflow-y-auto flex-1 pr-1">
                 <p class="text-xs text-gray-400 text-center py-4">لا توجد إشعارات حالياً</p>
             </div>
-            <button onclick="closeNotificationsModal()" class="w-full bg-gray-800 hover:bg-gray-700 text-white font-bold py-2.5 rounded-xl text-xs transition">إغلاق</button>
+            <button onclick="closeNotificationsModal()" class="w-full bg-gray-800 hover:bg-gray-700 text-white font-bold py-2.5 rounded-xl text-xs transition cursor-pointer">إغلاق</button>
         </div>
     </div>
 
@@ -266,8 +267,8 @@
             <p class="text-[11px] text-gray-400">اكتب يوزرك أو رابط صفحتك:</p>
             <input type="text" id="proof-input" placeholder="اكتب الإثبات هنا..." class="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-xs text-white outline-none">
             <div class="flex gap-2 pt-1">
-                <button onclick="submitProof()" class="flex-1 bg-emerald-500 text-black font-bold py-2.5 rounded-xl text-xs">إرسال للمراجعة</button>
-                <button onclick="closeProofModal()" class="flex-1 bg-gray-800 text-gray-300 font-bold py-2.5 rounded-xl text-xs">إلغاء</button>
+                <button onclick="submitProof()" class="flex-1 bg-emerald-500 text-black font-bold py-2.5 rounded-xl text-xs cursor-pointer">إرسال للمراجعة</button>
+                <button onclick="closeProofModal()" class="flex-1 bg-gray-800 text-gray-300 font-bold py-2.5 rounded-xl text-xs cursor-pointer">إلغاء</button>
             </div>
         </div>
     </div>
@@ -290,8 +291,8 @@
                 <input type="url" id="edit-task-link" class="w-full bg-gray-900 border border-gray-700 rounded-xl p-2.5 text-xs text-white outline-none text-left" dir="ltr">
             </div>
             <div class="flex gap-2 pt-1">
-                <button onclick="updateTaskData()" class="flex-1 bg-amber-500 text-black font-bold py-2.5 rounded-xl text-xs">حفظ التعديلات</button>
-                <button onclick="closeEditModal()" class="flex-1 bg-gray-800 text-gray-300 font-bold py-2.5 rounded-xl text-xs">إلغاء</button>
+                <button onclick="updateTaskData()" class="flex-1 bg-amber-500 text-black font-bold py-2.5 rounded-xl text-xs cursor-pointer">حفظ التعديلات</button>
+                <button onclick="closeEditModal()" class="flex-1 bg-gray-800 text-gray-300 font-bold py-2.5 rounded-xl text-xs cursor-pointer">إلغاء</button>
             </div>
         </div>
     </div>
@@ -306,8 +307,8 @@
                 <textarea id="ban-reason-input" placeholder="مثلاً: تم حظر حسابك بسبب الغش أو تكرار الإثباتات الوهمية" class="w-full bg-gray-900 border border-gray-700 rounded-xl p-2.5 text-xs text-white outline-none h-24"></textarea>
             </div>
             <div class="flex gap-2 pt-1">
-                <button onclick="confirmBanUser()" class="flex-1 bg-red-600 text-white font-bold py-2.5 rounded-xl text-xs">تأكيد الحظر</button>
-                <button onclick="closeBanModal()" class="flex-1 bg-gray-800 text-gray-300 font-bold py-2.5 rounded-xl text-xs">إلغاء</button>
+                <button onclick="confirmBanUser()" class="flex-1 bg-red-600 text-white font-bold py-2.5 rounded-xl text-xs cursor-pointer">تأكيد الحظر</button>
+                <button onclick="closeBanModal()" class="flex-1 bg-gray-800 text-gray-300 font-bold py-2.5 rounded-xl text-xs cursor-pointer">إلغاء</button>
             </div>
         </div>
     </div>
@@ -323,7 +324,6 @@
         let selectedTaskForProof = null;
         let siteSettings = { points_per_dollar: 1000, min_withdraw: 1000, max_withdraw: 50000 };
 
-        // فحص الجلسة فور فتح الصفحة بأمان تام
         window.onload = async () => {
             try {
                 await fetchSettings();
@@ -372,12 +372,13 @@
             const email = document.getElementById('auth-email').value.trim();
             const password = document.getElementById('auth-password').value.trim();
             const msg = document.getElementById('auth-msg');
-            msg.textContent = 'جاري المعالجة...';
-
+            
             if (!email || !password) {
                 msg.textContent = 'يرجى إدخال البريد الإلكتروني وكلمة المرور';
                 return;
             }
+
+            msg.textContent = 'جاري المعالجة...';
 
             let res;
             if (type === 'login') {
@@ -389,6 +390,7 @@
             if (res.error) {
                 msg.textContent = 'خطأ: ' + res.error.message;
             } else if (res.data.user) {
+                msg.textContent = 'تم تسجيل الدخول بنجاح!';
                 await initUser(res.data.user);
             }
         }
@@ -440,7 +442,6 @@
                 await loadAdminData();
             }
 
-            // تفعيل الاستماع اللحظي للرصيد
             try {
                 supabaseClient.removeChannel(supabaseClient.channel('profile-changes-' + user.id));
             } catch(e){}
@@ -599,7 +600,7 @@
                 } else if (status === 'approved') {
                     btnHtml = `<span class="text-[11px] bg-emerald-500/20 text-emerald-400 px-3 py-1.5 rounded-xl font-bold">✅ تم التنفيذ</span>`;
                 } else {
-                    btnHtml = `<button onclick="openProofModal(${task.id}, '${task.title.replace(/'/g, "\\'")}', '${task.link}')" class="bg-emerald-500 hover:bg-emerald-600 text-black text-xs font-bold px-4 py-2 rounded-xl transition">تنفيذ وإثبات</button>`;
+                    btnHtml = `<button onclick="openProofModal(${task.id}, '${task.title.replace(/'/g, "\\'")}', '${task.link}')" class="bg-emerald-500 hover:bg-emerald-600 text-black text-xs font-bold px-4 py-2 rounded-xl transition cursor-pointer">تنفيذ وإثبات</button>`;
                 }
 
                 tasksList.innerHTML += `
@@ -655,13 +656,18 @@
             }
         }
 
-        async function requestWithdrawal(e) {
-            e.preventDefault();
+        async function requestWithdrawal() {
             if (!currentUser) return;
             const wallet = document.getElementById('withdraw-wallet').value.trim();
             const amount = parseInt(document.getElementById('withdraw-amount').value);
             const msg = document.getElementById('withdraw-msg');
             const btn = document.getElementById('withdraw-btn');
+
+            if (!wallet) {
+                msg.className = 'text-center text-xs text-red-400 mt-1';
+                msg.textContent = '❌ يرجى إدخال معلومات المحفظة!';
+                return;
+            }
 
             if (isNaN(amount) || amount < siteSettings.min_withdraw) {
                 msg.className = 'text-center text-xs text-red-400 mt-1';
@@ -719,8 +725,7 @@
         }
 
         // ================= دوال لوحة الأدمن =================
-        async function updateSiteSettings(e) {
-            e.preventDefault();
+        async function updateSiteSettings() {
             const rate = parseInt(document.getElementById('setting-rate').value);
             const min = parseInt(document.getElementById('setting-min').value);
             const max = parseInt(document.getElementById('setting-max').value);
@@ -739,12 +744,16 @@
             }
         }
 
-        async function addNewTask(e) {
-            e.preventDefault();
+        async function addNewTask() {
             const title = document.getElementById('new-task-title').value.trim();
             const reward = parseInt(document.getElementById('new-task-reward').value);
             const link = document.getElementById('new-task-link').value.trim();
             const msg = document.getElementById('admin-msg');
+
+            if (!title || isNaN(reward) || !link) {
+                msg.textContent = '❌ يرجى ملء كافة حقول المهمة!';
+                return;
+            }
 
             const { error } = await supabaseClient.from('site_tasks').insert([{ title, reward, link }]);
             if (!error) {
@@ -771,8 +780,8 @@
                                 <span class="text-[10px] text-emerald-400 font-semibold">${t.reward} نقطة</span>
                             </div>
                             <div class="flex gap-1.5">
-                                <button onclick="openEditModal(${t.id}, '${t.title.replace(/'/g, "\\'")}', ${t.reward}, '${t.link}')" class="bg-amber-500/20 text-amber-400 text-[10px] font-bold px-3 py-1.5 rounded-lg">تعديل</button>
-                                <button onclick="deleteTask(${t.id})" class="bg-red-500/20 text-red-400 text-[10px] font-bold px-3 py-1.5 rounded-lg">حذف</button>
+                                <button onclick="openEditModal(${t.id}, '${t.title.replace(/'/g, "\\'")}', ${t.reward}, '${t.link}')" class="bg-amber-500/20 text-amber-400 text-[10px] font-bold px-3 py-1.5 rounded-lg cursor-pointer">تعديل</button>
+                                <button onclick="deleteTask(${t.id})" class="bg-red-500/20 text-red-400 text-[10px] font-bold px-3 py-1.5 rounded-lg cursor-pointer">حذف</button>
                             </div>
                         </div>
                     `;
@@ -796,9 +805,9 @@
                             </div>
                             <div class="flex justify-between items-center bg-gray-950 p-2 rounded-lg">
                                 <p class="text-xs text-gray-300 truncate max-w-[200px]">الإثبات: <span class="text-amber-400 font-bold">${s.proof_text}</span></p>
-                                <button onclick="copyToClipboard('${safeProof}')" class="bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 text-[10px] font-bold px-3 py-1.5 rounded-lg transition">📋 نسخ الإثبات</button>
+                                <button onclick="copyToClipboard('${safeProof}')" class="bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 text-[10px] font-bold px-3 py-1.5 rounded-lg transition cursor-pointer">📋 نسخ الإثبات</button>
                             </div>
-                            <button onclick="approveSubmission(${s.id}, '${s.user_id}', ${s.task_id})" class="bg-emerald-500 hover:bg-emerald-600 text-black text-xs font-bold py-2 rounded-xl transition">✅ الموافقة وإضافة الأرباح</button>
+                            <button onclick="approveSubmission(${s.id}, '${s.user_id}', ${s.task_id})" class="bg-emerald-500 hover:bg-emerald-600 text-black text-xs font-bold py-2 rounded-xl transition cursor-pointer">✅ الموافقة وإضافة الأرباح</button>
                         </div>
                     `;
                 });
@@ -838,9 +847,9 @@
                                 <span class="text-xs font-black text-emerald-400">${u.balance || 0} نقطة</span>
                             </div>
                             <div class="flex gap-1.5">
-                                <button onclick="modifyUserBalance('${u.id}', ${u.balance || 0}, 50)" class="flex-1 bg-emerald-500/20 text-emerald-400 text-[10px] font-bold py-1.5 rounded-lg">+50 نقطة</button>
-                                <button onclick="modifyUserBalance('${u.id}', ${u.balance || 0}, -50)" class="flex-1 bg-amber-500/20 text-amber-400 text-[10px] font-bold py-1.5 rounded-lg">-50 نقطة</button>
-                                <button onclick="promptBanUser('${u.id}', ${isBanned})" class="flex-1 ${isBanned ? 'bg-blue-500/20 text-blue-400' : 'bg-red-500/20 text-red-400'} text-[10px] font-bold py-1.5 rounded-lg">
+                                <button onclick="modifyUserBalance('${u.id}', ${u.balance || 0}, 50)" class="flex-1 bg-emerald-500/20 text-emerald-400 text-[10px] font-bold py-1.5 rounded-lg cursor-pointer">+50 نقطة</button>
+                                <button onclick="modifyUserBalance('${u.id}', ${u.balance || 0}, -50)" class="flex-1 bg-amber-500/20 text-amber-400 text-[10px] font-bold py-1.5 rounded-lg cursor-pointer">-50 نقطة</button>
+                                <button onclick="promptBanUser('${u.id}', ${isBanned})" class="flex-1 ${isBanned ? 'bg-blue-500/20 text-blue-400' : 'bg-red-500/20 text-red-400'} text-[10px] font-bold py-1.5 rounded-lg cursor-pointer">
                                     ${isBanned ? 'فك الحظر' : 'حظر'}
                                 </button>
                             </div>
@@ -899,19 +908,4 @@
                 await loadTasks();
                 await loadAdminData();
             }
-        }
-
-        async function approveSubmission(subId, userId, taskId) {
-            const { data: taskData } = await supabaseClient.from('site_tasks').select('reward').eq('id', taskId).single();
-            if (!taskData) {
-                alert('المهمة غير موجودة!');
-                return;
-            }
-            const reward = taskData.reward;
-
-            const { data: userData } = await supabaseClient.from('profiles').select('balance').eq('id', userId).single();
-            const currentBal = userData ? (userData.balance || 0) : 0;
-            const newBal = currentBal + reward;
-
-            await supabaseClient.from('profiles').update({ balance: newBal }).eq('id', userId);
-            await supabaseClient.from('tas
+     
