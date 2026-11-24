@@ -322,10 +322,9 @@
             document.getElementById('menu-dropdown').classList.toggle('hidden');
         }
 
-        async function openNotificationsModal() {
+        function openNotificationsModal() {
             document.getElementById('notifications-modal').classList.remove('hidden');
             document.getElementById('notif-badge').classList.add('hidden');
-            await fetchUserNotifications();
         }
 
         function closeNotificationsModal() {
@@ -346,25 +345,6 @@
                 document.getElementById('wallet-min-badge').textContent = `الحد الأدنى: ${siteSettings.min_withdraw} نقطة`;
                 document.getElementById('wallet-rate-text').textContent = `💵 كل ${siteSettings.points_per_dollar} نقطة = 1 دولار أمريكي`;
                 document.getElementById('withdraw-amount').placeholder = `الحد الأدنى ${siteSettings.min_withdraw} - الأقصى ${siteSettings.max_withdraw}`;
-            }
-        }
-
-        async function fetchUserNotifications() {
-            if (!currentUser) return;
-            const { data: notifs } = await supabaseClient
-                .from('notifications')
-                .select('*')
-                .eq('user_id', currentUser.id)
-                .order('created_at', { ascending: false });
-
-            const notifList = document.getElementById('notifications-list');
-            if (notifs && notifs.length > 0) {
-                notifList.innerHTML = '';
-                notifs.forEach(n => {
-                    notifList.innerHTML += `<div class="bg-gray-900 p-2.5 rounded-xl border border-gray-800 text-xs text-gray-200">${n.message}</div>`;
-                });
-            } else {
-                notifList.innerHTML = '<p class="text-xs text-gray-400 text-center py-4">لا توجد إشعارات جديدة</p>';
             }
         }
 
@@ -396,17 +376,6 @@
         async function initUser(user) {
             currentUser = user;
             await fetchSettings();
-            await fetchUserNotifications();
-            
-            // تحقق من وجود إشعارات غير مقروءة لإظهار نقطة الجرس الحمراء
-            const { data: unreadNotifs } = await supabaseClient
-                .from('notifications')
-                .select('id')
-                .eq('user_id', user.id)
-                .eq('is_read', false);
-            if (unreadNotifs && unreadNotifs.length > 0) {
-                document.getElementById('notif-badge').classList.remove('hidden');
-            }
             
             let { data: profile } = await supabaseClient
                 .from('profiles')
@@ -448,7 +417,7 @@
                 await loadAdminData();
             }
 
-            // الاستماع اللحظي لتحديثات الرصيد أو الحظر
+            // الاستماع اللحظي لتحديثات الرصيد أو الحظر والإشعارات
             supabaseClient
                 .channel('public:profiles:id=eq.' + user.id)
                 .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'profiles', filter: 'id=eq.' + user.id }, payload => {
@@ -461,21 +430,17 @@
                         currentBalance = newProfile.balance;
                         updateBalanceUI();
                         if (diff !== 0) {
+                            const notifList = document.getElementById('notifications-list');
+                            if (notifList.innerHTML.includes('لا توجد إشعارات')) notifList.innerHTML = '';
+                            
+                            const msgText = diff > 0 ? `🎉 مبروك! تمت إضافة ${diff} نقطة إلى رصيدك.` : `⚠️ تنبيه: تم خصم ${Math.abs(diff)} نقطة من رصيدك.`;
+                            notifList.innerHTML += `<div class="bg-gray-900 p-2.5 rounded-xl border border-gray-800 text-xs text-gray-200">${msgText}</div>`;
                             document.getElementById('notif-badge').classList.remove('hidden');
-                            fetchUserNotifications();
+                            
                             if (diff > 0) alert(`🎉 مبروك! تمت إضافة ${diff} نقطة إلى حسابك.`);
                             else alert(`⚠️ تنبيه: تم خصم ${Math.abs(diff)} نقطة من حسابك.`);
                         }
                     }
-                })
-                .subscribe();
-
-            // الاستماع اللحظي للإشعارات الجديدة
-            supabaseClient
-                .channel('public:notifications:user_id=eq.' + user.id)
-                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: 'user_id=eq.' + user.id }, payload => {
-                    document.getElementById('notif-badge').classList.remove('hidden');
-                    fetchUserNotifications();
                 })
                 .subscribe();
         }
@@ -847,36 +812,23 @@
             }
         }
 
+        // تم ضبط دالة الموافقة لتتطابق مع كودك الأساسي تماماً
         async function approveSubmission(subId, userId, taskId) {
-            const { data: taskData, error: taskErr } = await supabaseClient.from('site_tasks').select('reward').eq('id', taskId).single();
-            if (taskErr || !taskData) {
-                alert('❌ خطأ: المهمة غير موجودة!');
+            const { data: taskData } = await supabaseClient.from('site_tasks').select('reward').eq('id', taskId).single();
+            if (!taskData) {
+                alert('المهمة غير موجودة!');
                 return;
             }
             const reward = taskData.reward;
 
-            const { data: userData, error: userErr } = await supabaseClient.from('profiles').select('balance').eq('id', userId).single();
-            if (userErr || !userData) {
-                alert('❌ خطأ: لم يتم العثور على بروفايل المستخدم!');
-                return;
-            }
-            
-            const currentBal = userData.balance || 0;
+            const { data: userData } = await supabaseClient.from('profiles').select('balance').eq('id', userId).single();
+            const currentBal = userData ? (userData.balance || 0) : 0;
             const newBal = currentBal + reward;
 
-            const { error: updateErr } = await supabaseClient.from('profiles').update({ balance: newBal }).eq('id', userId);
-            if (updateErr) {
-                alert('❌ خطأ أثناء تحديث رصيد المستخدم: ' + updateErr.message);
-                return;
-            }
+            await supabaseClient.from('profiles').update({ balance: newBal }).eq('id', userId);
+            await supabaseClient.from('task_submissions').update({ status: 'approved' }).eq('id', subId);
 
-            const { error: subUpdateErr } = await supabaseClient.from('task_submissions').update({ status: 'approved' }).eq('id', subId);
-            if (subUpdateErr) {
-                alert('❌ خطأ أثناء تحديث حالة المهمة: ' + subUpdateErr.message);
-                return;
-            }
-
-            alert(`✅ تم قبول الإثبات بنجاح وإضافة ${reward} نقطة لرصيد المستخدم!`);
+            alert(`✅ تم قبول الإثبات وإضافة ${reward} نقطة لرصيد المستخدم بنجاح!`);
             await loadAdminData();
         }
 
@@ -922,4 +874,13 @@
 
         async function logout() {
             try {
-                await supabaseClient.aut
+                await supabaseClient.auth.signOut();
+            } catch(e){}
+            localStorage.clear();
+            sessionStorage.clear();
+            location.reload();
+        }
+    </script>
+</body>
+</html>
+
