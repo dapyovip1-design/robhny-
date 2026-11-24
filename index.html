@@ -44,7 +44,7 @@
                     <button type="button" onclick="handleAuth('login')" class="flex-1 bg-emerald-500 hover:bg-emerald-600 text-black font-bold py-3 rounded-xl text-sm transition cursor-pointer">تسجيل الدخول</button>
                     <button type="button" onclick="handleAuth('signup')" class="flex-1 bg-gray-800 hover:bg-gray-700 text-white font-bold py-3 rounded-xl text-sm border border-gray-700 transition cursor-pointer">حساب جديد</button>
                 </div>
-                <p id="auth-msg" class="text-center text-xs text-amber-400 mt-2 font-bold"></p>
+                <p id="auth-msg" class="text-center text-xs text-amber-400 mt-2 font-bold bg-gray-900 p-2 rounded-xl border border-gray-800"></p>
             </div>
         </div>
     </div>
@@ -336,6 +336,7 @@
                 }
             } catch (err) {
                 console.error("Auth session error:", err);
+                document.getElementById('auth-msg').textContent = 'خطأ في الجلسة: ' + err.message;
                 document.getElementById('auth-section').classList.remove('hidden');
             }
         };
@@ -382,29 +383,35 @@
                 return;
             }
 
-            msg.textContent = 'جاري المعالجة...';
+            msg.textContent = 'جاري الاتصال بقاعدة البيانات...';
 
-            let res;
-            if (type === 'login') {
-                res = await supabaseClient.auth.signInWithPassword({ email, password });
-            } else {
-                res = await supabaseClient.auth.signUp({ email, password });
-            }
-
-            if (res.error) {
-                msg.textContent = 'خطأ: ' + res.error.message;
-            } else if (res.data.user) {
-                msg.textContent = '✅ تم تسجيل الدخول بنجاح!';
-                await initUser(res.data.user);
-            } else if (res.data.session && res.data.session.user) {
-                msg.textContent = '✅ تم الدخول بنجاح!';
-                await initUser(res.data.session.user);
-            } else {
-                msg.textContent = '✅ تم بنجاح، جاري فتح التطبيق...';
-                const { data: { session } } = await supabaseClient.auth.getSession();
-                if(session && session.user) {
-                    await initUser(session.user);
+            try {
+                let res;
+                if (type === 'login') {
+                    res = await supabaseClient.auth.signInWithPassword({ email, password });
+                } else {
+                    res = await supabaseClient.auth.signUp({ email, password });
                 }
+
+                if (res.error) {
+                    msg.textContent = '❌ خطأ Supabase: ' + res.error.message;
+                } else if (res.data.user) {
+                    msg.textContent = '✅ تم تسجيل الدخول، جاري فتح التطبيق...';
+                    await initUser(res.data.user);
+                } else if (res.data.session && res.data.session.user) {
+                    msg.textContent = '✅ تم الدخول، جاري فتح التطبيق...';
+                    await initUser(res.data.session.user);
+                } else {
+                    msg.textContent = '⚠️ تم التسجيل، بانتظار تفعيل الجلسة...';
+                    const { data: { session } } = await supabaseClient.auth.getSession();
+                    if(session && session.user) {
+                        await initUser(session.user);
+                    } else {
+                        msg.textContent = '❌ تعذر فتح الجلسة تلقائياً، يرجى المحاولة مرة أخرى.';
+                    }
+                }
+            } catch (err) {
+                msg.textContent = '❌ خطأ استثنائي: ' + err.message;
             }
         }
 
@@ -880,20 +887,4 @@
                 .eq('id', id);
 
             if (error) {
-                alert('حدث خطأ أثناء التعديل: ' + error.message);
-            } else {
-                alert('✅ تم تحديث المهمة بنجاح!');
-                closeEditModal();
-                await loadTasks();
-                await loadAdminData();
-            }
-        }
-
-        async function deleteTask(id) {
-            if (!confirm('هل أنت متأكد من حذف هذه المهمة؟')) return;
-
-            const { error } = await supabaseClient.from('site_tasks').delete().eq('id', id);
-            if (!error) {
-                alert('🗑️ تم حذف المهمة بنجاح!');
-                await loadTasks();
-                await l
+                alert('حدث خطأ أثناء التعديل: ' + error.messa
