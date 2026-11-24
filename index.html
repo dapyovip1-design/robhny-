@@ -132,7 +132,7 @@
                 </form>
             </div>
 
-            <!-- 2. مراجعة إثباتات المهام (الجديد) -->
+            <!-- 2. مراجعة إثباتات المهام -->
             <div class="glass p-5 rounded-2xl border border-blue-500/30 space-y-3">
                 <h3 class="text-sm font-bold text-blue-400">📋 إثباتات المهام المعلقة (بانتظار الموافقة)</h3>
                 <div id="admin-submissions-list" class="space-y-2.5 max-h-72 overflow-y-auto">
@@ -140,7 +140,7 @@
                 </div>
             </div>
 
-            <!-- 3. إدارة طلبات السحب -->
+            <!-- 3. طلبات السحب -->
             <div class="glass p-5 rounded-2xl border border-emerald-500/30 space-y-3">
                 <h3 class="text-sm font-bold text-emerald-400">💸 طلبات السحب المعلقة</h3>
                 <div id="admin-withdrawals-list" class="space-y-2 max-h-60 overflow-y-auto">
@@ -148,7 +148,7 @@
                 </div>
             </div>
 
-            <!-- 4. إدارة المستخدمين -->
+            <!-- 4. إدارة المستخدمين (مع أزرار الرصيد والحظر) -->
             <div class="glass p-5 rounded-2xl border border-purple-500/30 space-y-3">
                 <h3 class="text-sm font-bold text-purple-400">👥 إدارة المستخدمين (رصيد وحظر)</h3>
                 <div id="admin-users-list" class="space-y-2 max-h-72 overflow-y-auto">
@@ -168,7 +168,7 @@
         <div class="glass w-full max-w-sm p-5 rounded-2xl space-y-3 border border-emerald-500/40">
             <h3 class="text-sm font-bold text-white">📤 تقديم إثبات تنفيذ المهمة</h3>
             <p id="modal-task-title" class="text-xs text-emerald-400 font-semibold"></p>
-            <p class="text-[11px] text-gray-400">اكتب اسم المستخدم أو اليوزر أو رابط الدلائل (مثلاً: يوزرك في التليجرام أو الديسكورد):</p>
+            <p class="text-[11px] text-gray-400">اكتب يوزرك أو رابط صفحتك:</p>
             <input type="text" id="proof-input" placeholder="اكتب الإثبات هنا..." class="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-xs text-white outline-none">
             <div class="flex gap-2 pt-1">
                 <button onclick="submitProof()" class="flex-1 bg-emerald-500 text-black font-bold py-2.5 rounded-xl text-xs">إرسال للمراجعة</button>
@@ -277,7 +277,6 @@
             activeBtn.classList.add('bg-emerald-500', 'text-black');
         }
 
-        // تحميل المهام مع إظهار حالة المراجعة للمستخدم
         async function loadTasks() {
             const tasksList = document.getElementById('tasks-list');
             
@@ -286,7 +285,6 @@
                 .select('*')
                 .order('id', { ascending: false });
 
-            // جلب الإثباتات التي قدمها المستخدم لهذا اليوم/المهام
             const { data: submissions } = await supabaseClient
                 .from('task_submissions')
                 .select('task_id, status')
@@ -332,7 +330,7 @@
             document.getElementById('modal-task-title').textContent = title;
             document.getElementById('proof-input').value = '';
             document.getElementById('proof-modal').classList.remove('hidden');
-            window.open(link, '_blank'); // يفتح رابط المهمة للمستخدم تلقائياً
+            window.open(link, '_blank');
         }
 
         function closeProofModal() {
@@ -431,7 +429,6 @@
         }
 
         async function loadAdminData() {
-            // 1. تحميل الإثباتات المعلقة
             const subsList = document.getElementById('admin-submissions-list');
             const { data: subs } = await supabaseClient.from('task_submissions').select('*').eq('status', 'pending').order('created_at', { ascending: false });
 
@@ -445,7 +442,7 @@
                                 <span class="text-[10px] text-gray-400">${s.user_email || ''}</span>
                             </div>
                             <p class="text-xs bg-gray-950 p-2 rounded-lg text-gray-300">الإثبات: <span class="text-amber-400 font-bold">${s.proof_text}</span></p>
-                            <button onclick="approveSubmission(${s.id}, ${s.user_id}, ${s.task_id})" class="bg-emerald-500 hover:bg-emerald-600 text-black text-xs font-bold py-2 rounded-xl transition">✅ الموافقة وإضافة الأرباح</button>
+                            <button onclick="approveSubmission(${s.id}, '${s.user_id}', ${s.task_id})" class="bg-emerald-500 hover:bg-emerald-600 text-black text-xs font-bold py-2 rounded-xl transition">✅ الموافقة وإضافة الأرباح</button>
                         </div>
                     `;
                 });
@@ -453,7 +450,6 @@
                 subsList.innerHTML = '<p class="text-xs text-gray-400 text-center py-2">لا توجد إثباتات معلقة</p>';
             }
 
-            // 2. طلبات السحب
             const wList = document.getElementById('admin-withdrawals-list');
             const { data: withdrawals } = await supabaseClient.from('withdrawals').select('*').order('created_at', { ascending: false });
             if (withdrawals && withdrawals.length > 0) {
@@ -469,27 +465,37 @@
                         </div>
                     `;
                 });
+            } else {
+                wList.innerHTML = '<p class="text-xs text-gray-400 text-center py-2">لا توجد طلبات سحب حالياً</p>';
             }
 
-            // 3. المستخدمين
             const usersList = document.getElementById('admin-users-list');
             const { data: users } = await supabaseClient.from('profiles').select('*').order('balance', { ascending: false });
             if (users && users.length > 0) {
                 usersList.innerHTML = '';
                 users.forEach(u => {
                     usersList.innerHTML += `
-                        <div class="bg-gray-900 p-3 rounded-xl border flex justify-between items-center">
-                            <span class="text-[11px] text-gray-200 truncate max-w-[150px]">${u.email || u.id}</span>
-                            <span class="text-xs font-black text-emerald-400">${u.balance || 0} نقطة</span>
+                        <div class="bg-gray-900 p-3 rounded-xl border ${u.is_banned ? 'border-red-500/50' : 'border-gray-800'} flex flex-col gap-2">
+                            <div class="flex justify-between items-center">
+                                <span class="text-[11px] font-bold text-gray-200 truncate max-w-[180px]">${u.email || u.id}</span>
+                                <span class="text-xs font-black text-emerald-400">${u.balance || 0} نقطة</span>
+                            </div>
+                            <div class="flex gap-1.5">
+                                <button onclick="modifyUserBalance('${u.id}', ${u.balance || 0}, 50)" class="flex-1 bg-emerald-500/20 text-emerald-400 text-[10px] font-bold py-1.5 rounded-lg">+50 نقطة</button>
+                                <button onclick="modifyUserBalance('${u.id}', ${u.balance || 0}, -50)" class="flex-1 bg-amber-500/20 text-amber-400 text-[10px] font-bold py-1.5 rounded-lg">-50 نقطة</button>
+                                <button onclick="toggleBanUser('${u.id}', ${u.is_banned})" class="flex-1 ${u.is_banned ? 'bg-blue-500/20 text-blue-400' : 'bg-red-500/20 text-red-400'} text-[10px] font-bold py-1.5 rounded-lg">
+                                    ${u.is_banned ? 'فك الحظر' : 'حظر'}
+                                </button>
+                            </div>
                         </div>
                     `;
                 });
+            } else {
+                usersList.innerHTML = '<p class="text-xs text-gray-400 text-center py-2">لا توجد مستخدمين مسجلين</p>';
             }
         }
 
-        // موافقة الأدمن على إثبات المهمة (تحويل الحالة وإضافة النقاط تلقائياً للمستخدم)
         async function approveSubmission(subId, userId, taskId) {
-            // 1. جلب مكافأة المهمة من جدول site_tasks
             const { data: taskData } = await supabaseClient.from('site_tasks').select('reward').eq('id', taskId).single();
             if (!taskData) {
                 alert('المهمة غير موجودة!');
@@ -497,18 +503,29 @@
             }
             const reward = taskData.reward;
 
-            // 2. جلب رصيد المستخدم الحالي
             const { data: userData } = await supabaseClient.from('profiles').select('balance').eq('id', userId).single();
             const currentBal = userData ? (userData.balance || 0) : 0;
             const newBal = currentBal + reward;
 
-            // 3. تحديث رصيد المستخدم
             await supabaseClient.from('profiles').update({ balance: newBal }).eq('id', userId);
-
-            // 4. تحديث حالة الإثبات إلى approved
             await supabaseClient.from('task_submissions').update({ status: 'approved' }).eq('id', subId);
 
             alert(`✅ تم قبول الإثبات وإضافة ${reward} نقطة لرصيد المستخدم بنجاح!`);
+            await loadAdminData();
+        }
+
+        async function modifyUserBalance(userId, oldBal, change) {
+            const newBal = Math.max(0, oldBal + change);
+            await supabaseClient.from('profiles').update({ balance: newBal }).eq('id', userId);
+            if (currentUser && userId === currentUser.id) {
+                currentBalance = newBal;
+                updateBalanceUI();
+            }
+            await loadAdminData();
+        }
+
+        async function toggleBanUser(userId, currentStatus) {
+            await supabaseClient.from('profiles').update({ is_banned: !currentStatus }).eq('id', userId);
             await loadAdminData();
         }
 
