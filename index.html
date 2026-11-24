@@ -149,15 +149,12 @@
     <!-- ==================== صفحة لوحة تحكم الأدمن المستقلة ==================== -->
     <div id="admin-section" class="hidden max-w-md mx-auto p-4 space-y-4">
         
-        <!-- هيدر صفحة الأدمن (يحتوي على أيقونة الجرس وزر القائمة 3 شرط أيضاً) -->
         <header class="flex justify-between items-center py-2 glass px-4 rounded-2xl border border-indigo-500/40 relative">
             <div class="flex items-center gap-2">
-                <!-- زر القائمة للأدمن (3 شرط ☰) -->
                 <div class="relative">
                     <button onclick="toggleAdminMenuDropdown()" class="bg-gray-800 hover:bg-gray-700 border border-gray-700 px-3 py-2 rounded-xl text-sm font-bold transition flex items-center gap-1">
                         ☰
                     </button>
-                    <!-- القائمة المنسدلة للأدمن -->
                     <div id="admin-menu-dropdown" class="hidden absolute top-12 right-0 glass w-44 rounded-2xl p-2 shadow-2xl border border-gray-700 z-50 space-y-1.5">
                         <button onclick="closeAdminPage(); toggleAdminMenuDropdown();" class="w-full text-right bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2">
                             🏠 واجهة المستخدم
@@ -168,7 +165,6 @@
                     </div>
                 </div>
 
-                <!-- أيقونة الجرس ظاهرة وثابتة في صفحة الأدمن أيضاً -->
                 <button onclick="openNotificationsModal()" class="relative bg-gray-800 hover:bg-gray-700 border border-gray-700 p-2 rounded-xl text-sm transition">
                     🔔
                     <span id="admin-notif-badge" class="absolute -top-1 -right-1 hidden bg-red-500 text-white text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center">0</span>
@@ -330,12 +326,11 @@
         window.onload = async () => {
             await fetchSettings();
             const { data: { session } } = await supabaseClient.auth.getSession();
-            if (session) {
+            if (session && session.user) {
                 await initUser(session.user);
             }
         };
 
-        // التحكم في إظهار وإخفاء القوائم المنسدلة (3 شرط)
         function toggleMenuDropdown() {
             const dropdown = document.getElementById('menu-dropdown');
             dropdown.classList.toggle('hidden');
@@ -346,11 +341,12 @@
             dropdown.classList.toggle('hidden');
         }
 
-        // إغلاق القوائم عند النقر في أي مكان خارجها
         window.onclick = function(event) {
             if (!event.target.matches('button')) {
-                document.getElementById('menu-dropdown').classList.add('hidden');
-                document.getElementById('admin-menu-dropdown').classList.add('hidden');
+                const menu = document.getElementById('menu-dropdown');
+                const adminMenu = document.getElementById('admin-menu-dropdown');
+                if (menu) menu.classList.add('hidden');
+                if (adminMenu) adminMenu.classList.add('hidden');
             }
         }
 
@@ -390,6 +386,7 @@
         }
 
         async function initUser(user) {
+            if (!user) return;
             currentUser = user;
             await fetchSettings();
             
@@ -421,6 +418,7 @@
             updateBalanceUI();
 
             document.getElementById('auth-section').classList.add('hidden');
+            document.getElementById('banned-section').classList.add('hidden');
             document.getElementById('app-section').classList.remove('hidden');
 
             await loadTasks();
@@ -434,7 +432,11 @@
                 await loadAdminData();
             }
 
-            // الاستماع اللحظي للرصيد وتوليد إشعار تلقائي
+            // الاستماع اللحظي بأمان تام للمستخدم الحالي فقط
+            try {
+                supabaseClient.removeChannel(supabaseClient.channel('profile-changes-' + user.id));
+            } catch(e){}
+
             supabaseClient
                 .channel('profile-changes-' + user.id)
                 .on('postgres_changes', { 
@@ -467,6 +469,7 @@
         }
 
         async function loadUserNotifications() {
+            if (!currentUser) return;
             const { data: notifs } = await supabaseClient
                 .from('notifications')
                 .select('*')
@@ -509,7 +512,9 @@
 
         async function openNotificationsModal() {
             document.getElementById('notifications-modal').classList.remove('hidden');
-            await supabaseClient.from('notifications').update({ is_read: true }).eq('user_id', currentUser.id);
+            if (currentUser) {
+                await supabaseClient.from('notifications').update({ is_read: true }).eq('user_id', currentUser.id);
+            }
             document.getElementById('notif-badge').classList.add('hidden');
             const adminBadge = document.getElementById('admin-notif-badge');
             if(adminBadge) adminBadge.classList.add('hidden');
@@ -553,6 +558,7 @@
         }
 
         async function loadTasks() {
+            if (!currentUser) return;
             const tasksList = document.getElementById('tasks-list');
             
             const { data: tasks } = await supabaseClient
@@ -614,6 +620,7 @@
         }
 
         async function submitProof() {
+            if (!currentUser) return;
             const proofText = document.getElementById('proof-input').value.trim();
             if (!proofText) {
                 alert('يرجى كتابة إثبات التنفيذ أولاً!');
@@ -642,6 +649,7 @@
 
         async function requestWithdrawal(e) {
             e.preventDefault();
+            if (!currentUser) return;
             const wallet = document.getElementById('withdraw-wallet').value.trim();
             const amount = parseInt(document.getElementById('withdraw-amount').value);
             const msg = document.getElementById('withdraw-msg');
@@ -690,6 +698,7 @@
         }
 
         function openOfferwall() {
+            if (!currentUser) return;
             window.open(`https://www.ayetstudios.com/offers/web_offerwall/YOUR_PLACEMENT_ID?external_identifier=${currentUser.id}`, '_blank');
         }
 
@@ -905,9 +914,4 @@
             await loadAdminData();
         }
 
-        async function modifyUserBalance(userId, oldBal, change) {
-            const newBal = Math.max(0, oldBal + change);
-            await supabaseClient.from('profiles').update({ balance: newBal }).eq('id', userId);
-            
-            if (change > 0) {
-                await sendNotificationToUser(u
+        async function modifyUserBalance(userId, oldBal, change) 
