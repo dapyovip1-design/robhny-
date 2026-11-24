@@ -248,13 +248,10 @@
         </div>
     </div>
 
-    <!-- نافذة الإشعارات (مع زر تحديث يدوي لضمان ظهور الرسائل على الموبايل) -->
+    <!-- نافذة الإشعارات -->
     <div id="notifications-modal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
         <div class="glass w-full max-w-sm p-5 rounded-2xl space-y-3 border border-emerald-500/40">
-            <div class="flex justify-between items-center">
-                <h3 class="text-sm font-bold text-emerald-400">🔔 إشعارات الحساب</h3>
-                <button onclick="fetchUserNotifications()" class="bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 text-[10px] font-bold px-2.5 py-1 rounded-lg cursor-pointer">🔄 تحديث</button>
-            </div>
+            <h3 class="text-sm font-bold text-emerald-400">🔔 إشعارات الحساب</h3>
             <div id="notifications-list" class="space-y-2 max-h-60 overflow-y-auto">
                 <p class="text-xs text-gray-400 text-center py-4">لا توجد إشعارات جديدة</p>
             </div>
@@ -316,7 +313,7 @@
         window.onload = async () => {
             await fetchSettings();
             const { data: { session } } = await supabaseClient.auth.getSession();
-            if (session && session.user) {
+            if (session) {
                 await initUser(session.user);
             }
         };
@@ -353,15 +350,7 @@
         }
 
         async function fetchUserNotifications() {
-            if (!currentUser) {
-                const { data: { session } } = await supabaseClient.auth.getSession();
-                if (session && session.user) {
-                    currentUser = session.user;
-                } else {
-                    return;
-                }
-            }
-
+            if (!currentUser) return;
             const { data: notifs } = await supabaseClient
                 .from('notifications')
                 .select('*')
@@ -372,7 +361,7 @@
             if (notifs && notifs.length > 0) {
                 notifList.innerHTML = '';
                 notifs.forEach(n => {
-                    notifList.innerHTML += `<div class="bg-gray-900 p-2.5 rounded-xl border border-gray-800 text-xs text-gray-200 mb-2">${n.message}</div>`;
+                    notifList.innerHTML += `<div class="bg-gray-900 p-2.5 rounded-xl border border-gray-800 text-xs text-gray-200">${n.message}</div>`;
                 });
             } else {
                 notifList.innerHTML = '<p class="text-xs text-gray-400 text-center py-4">لا توجد إشعارات جديدة</p>';
@@ -921,4 +910,20 @@
         async function toggleBanUser(userId, newStatus, reason) {
             const { error } = await supabaseClient.from('profiles').update({ is_banned: newStatus, ban_reason: reason }).eq('id', userId);
             if (error) {
-                aler
+                alert('خطأ في تحديث حالة الحظر: ' + error.message);
+            } else {
+                await loadAdminData();
+            }
+        }
+
+        async function logout() {
+            try {
+                await supabaseClient.auth.signOut();
+            } catch(e){}
+            localStorage.clear();
+            sessionStorage.clear();
+            location.reload();
+        }
+    </script>
+</body>
+                </html>
