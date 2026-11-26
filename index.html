@@ -561,7 +561,15 @@
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlyZW96dG1janlscWxhb251YWRiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTU1MjYyNjcsImV4cCI6MjExMTEwMjI2N30.4aOPvo2qZK0_iAs1gdekA_3Lqx6yO1v4C1kSB-djM0Y'; 
         const ADMIN_EMAIL = 'gezo@gmail.com';
 
-        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+            auth: {
+                persistSession: true,
+                autoRefreshToken: true,
+                detectSessionInUrl: true,
+                storage: window.localStorage
+            }
+        });
+        let userRealtimeChannel = null;
         let currentUser = null;
         let currentBalance = 0;
         let selectedTaskForProof = null;
@@ -801,34 +809,61 @@
                 await loadAdminData();
             }
 
-            // الاستماع اللحظي لتحديثات الرصيد
-            supabaseClient
-                .channel('public:profiles:id=eq.' + user.id)
-                .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'profiles', filter: 'id=eq.' + user.id }, payload => {
-                    const newProfile = payload.new;
-                    if (newProfile.is_banned) {
-                        alert('🚫 تم حظر حسابك: ' + (newProfile.ban_reason || 'مخالفة الشروط'));
-                        logout();
-                    } else {
-                        const diff = newProfile.balance - currentBalance;
-                        currentBalance = newProfile.balance;
-                        updateBalanceUI();
-                        if (diff !== 0) {
-                            if (diff > 0) alert(`🎉 مبروك! تمت إضافة ${diff} نقطة إلى حسابك.`);
-                            else alert(`⚠️ تنبيه: تم خصم ${Math.abs(diff)} نقطة من حسابك.`);
-                        }
-                    }
-                })
-                .subscribe();
+            // تشغيل قناة واحدة فقط لكل مستخدم لتجنب تكرار الاستماع عند إعادة تهيئة الحساب.
+            setupUserRealtime(user);
+            await loadMyWithdrawals();
+        }
 
-            // الاستماع اللحظي للإشعارات الجديدة لتنبيج الجرس فوراً
-            supabaseClient
-                .channel('public:notifications:user_id=eq.' + user.id)
-                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: 'user_id=eq.' + user.id }, payload => {
-                    document.getElementById('notif-badge').classList.remove('hidden');
-                    fetchUserNotifications();
-                })
-                .subscribe();
+
+        function setupUserRealtime(user) {
+            if (userRealtimeChannel) {
+                supabaseClient.removeChannel(userRealtimeChannel);
+                userRealtimeChannel = null;
+            }
+            const channel = supabaseClient.channel('user-live-' + user.id);
+
+            channel.on('postgres_changes', {
+                event: 'UPDATE', schema: 'public', table: 'profiles', filter: 'id=eq.' + user.id
+            }, payload => {
+                const profile = payload.new || {};
+                if (profile.is_banned) {
+                    alert('🚫 تم حظر حسابك: ' + (profile.ban_reason || 'مخالفة الشروط'));
+                    logout();
+                    return;
+                }
+                const nextBalance = Number(profile.balance || 0);
+                const difference = nextBalance - Number(currentBalance || 0);
+                currentBalance = nextBalance;
+                updateBalanceUI();
+                if (difference > 0) alert(`🎉 مبروك! تمت إضافة ${difference} نقطة إلى حسابك.`);
+                else if (difference < 0) alert(`⚠️ تم تحديث رصيدك بخصم ${Math.abs(difference)} نقطة.`);
+            });
+
+            channel.on('postgres_changes', {
+                event: '*', schema: 'public', table: 'notifications', filter: 'user_id=eq.' + user.id
+            }, () => {
+                fetchUserNotifications();
+                supabaseClient.from('notifications').select('id').eq('user_id', user.id).eq('is_read', false)
+                    .then(({ data }) => {
+                        const badge = document.getElementById('notif-badge');
+                        if (badge) badge.classList.toggle('hidden', !data || data.length === 0);
+                    });
+            });
+
+            channel.on('postgres_changes', {
+                event: '*', schema: 'public', table: 'withdrawals', filter: 'user_id=eq.' + user.id
+            }, () => loadMyWithdrawals());
+
+            channel.on('postgres_changes', {
+                event: '*', schema: 'public', table: 'task_submissions', filter: 'user_id=eq.' + user.id
+            }, () => loadTasks());
+
+            channel.subscribe(status => {
+                if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+                    console.warn('Realtime connection status:', status);
+                }
+            });
+            userRealtimeChannel = channel;
         }
 
         function openAdminPage() {
