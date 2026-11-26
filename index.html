@@ -872,10 +872,13 @@
         }
 
         function switchTab(tab) {
-            document.getElementById('view-profile').classList.add('hidden');
+            // إخفاء كل الصفحات المنفصلة أولاً حتى لا تظل صفحة الدعم أو عن الموقع ظاهرة أسفل التبويبات.
+            ['wallet', 'tasks', 'offers', 'profile', 'about', 'support'].forEach(t => {
+                const page = document.getElementById('view-' + t);
+                if (page) page.classList.add('hidden');
+            });
             document.getElementById('dashboard-navigation').classList.remove('hidden');
             ['wallet', 'tasks', 'offers'].forEach(t => {
-                document.getElementById('view-' + t).classList.add('hidden');
                 const btn = document.getElementById('tab-' + t);
                 btn.classList.remove('bg-emerald-500', 'text-black');
                 btn.classList.add('bg-gray-800', 'text-gray-300');
@@ -893,7 +896,10 @@
 
         async function openProfile() {
             if (!currentUser) return;
-            ['wallet', 'tasks', 'offers'].forEach(t => document.getElementById('view-' + t).classList.add('hidden'));
+            ['wallet', 'tasks', 'offers', 'about', 'support'].forEach(t => {
+                const page = document.getElementById('view-' + t);
+                if (page) page.classList.add('hidden');
+            });
             document.getElementById('dashboard-navigation').classList.add('hidden');
             document.getElementById('view-profile').classList.remove('hidden');
             const msg = document.getElementById('profile-save-message');
