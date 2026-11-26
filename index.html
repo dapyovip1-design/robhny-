@@ -1322,12 +1322,16 @@
 
             const { data: submissions } = await supabaseClient
                 .from('task_submissions')
-                .select('task_id, status')
-                .eq('user_id', currentUser.id);
+                .select('task_id, status, created_at')
+                .eq('user_id', currentUser.id)
+                .order('created_at', { ascending: false });
 
+            // نعتمد أحدث إثبات لكل مهمة: المرفوضة يمكن إعادة تنفيذها، والمقبولة تختفي نهائياً.
             const subMap = {};
             if (submissions) {
-                submissions.forEach(s => { subMap[s.task_id] = s.status; });
+                submissions.forEach(s => {
+                    if (subMap[s.task_id] === undefined) subMap[s.task_id] = s.status;
+                });
             }
 
             if (!tasks || tasks.length === 0) {
@@ -1338,14 +1342,19 @@
             tasksList.innerHTML = '';
             tasks.forEach(task => {
                 const status = subMap[task.id];
+                // بعد الموافقة تختفي المهمة بالكامل من قائمة المستخدم.
+                if (status === 'approved') return;
+
                 let btnHtml = '';
+                const safeTitle = String(task.title || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\n/g, ' ');
+                const safeLink = String(task.link || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
 
                 if (status === 'pending') {
                     btnHtml = `<span class="text-[11px] bg-amber-500/20 text-amber-400 px-3 py-1.5 rounded-xl font-bold">⏳ قيد المراجعة</span>`;
-                } else if (status === 'approved') {
-                    btnHtml = `<span class="text-[11px] bg-emerald-500/20 text-emerald-400 px-3 py-1.5 rounded-xl font-bold">✅ تم التنفيذ</span>`;
+                } else if (status === 'rejected') {
+                    btnHtml = `<div class="flex flex-col items-end gap-1"><span class="text-[10px] text-red-300 font-bold">❌ تم رفض الإثبات</span><button onclick="openProofModal(${task.id}, '${safeTitle}', '${safeLink}')" class="bg-emerald-500 hover:bg-emerald-600 text-black text-xs font-bold px-3 py-2 rounded-xl transition cursor-pointer">إعادة التنفيذ</button></div>`;
                 } else {
-                    btnHtml = `<button onclick="openProofModal(${task.id}, '${task.title.replace(/'/g, "\\'")}', '${task.link}')" class="bg-emerald-500 hover:bg-emerald-600 text-black text-xs font-bold px-4 py-2 rounded-xl transition cursor-pointer">تنفيذ وإثبات</button>`;
+                    btnHtml = `<button onclick="openProofModal(${task.id}, '${safeTitle}', '${safeLink}')" class="bg-emerald-500 hover:bg-emerald-600 text-black text-xs font-bold px-4 py-2 rounded-xl transition cursor-pointer">تنفيذ وإثبات</button>`;
                 }
 
                 tasksList.innerHTML += `
@@ -1623,7 +1632,10 @@
                                 <p class="text-xs text-gray-300 truncate max-w-[200px]">الإثبات: <span class="text-amber-400 font-bold">${s.proof_text}</span></p>
                                 <button onclick="copyToClipboard('${safeProof}')" class="bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 text-[10px] font-bold px-3 py-1.5 rounded-lg transition cursor-pointer">📋 نسخ الإثبات</button>
                             </div>
-                            <button onclick="approveSubmission(${s.id}, '${s.user_id}', ${s.task_id})" class="bg-emerald-500 hover:bg-emerald-600 text-black text-xs font-bold py-2 rounded-xl transition cursor-pointer">✅ الموافقة وإضافة الأرباح</button>
+                            <div class="grid grid-cols-2 gap-2">
+                                <button onclick="approveSubmission(${s.id}, '${s.user_id}', ${s.task_id})" class="bg-emerald-500 hover:bg-emerald-600 text-black text-xs font-bold py-2 rounded-xl transition cursor-pointer">✅ الموافقة وإضافة الأرباح</button>
+                                <button onclick="rejectSubmission(${s.id}, '${s.task_id || ''}')" class="bg-red-500/15 hover:bg-red-500/25 text-red-300 border border-red-500/30 text-xs font-bold py-2 rounded-xl transition cursor-pointer">❌ رفض الإثبات</button>
+                            </div>
                         </div>
                     `;
                 });
@@ -1775,6 +1787,24 @@
             await supabaseClient.from('task_submissions').update({ status: 'approved' }).eq('id', subId);
 
             alert(`✅ تم قبول الإثبات وإضافة ${reward} نقطة لرصيد المستخدم بنجاح!`);
+            await loadAdminData();
+        }
+
+        async function rejectSubmission(subId, taskId) {
+            if (!(await robhnyConfirm('هل أنت متأكد من رفض إثبات هذه المهمة؟ لن يحصل المستخدم على نقاط المهمة.'))) return;
+
+            const { error } = await supabaseClient
+                .from('task_submissions')
+                .update({ status: 'rejected' })
+                .eq('id', subId)
+                .eq('status', 'pending');
+
+            if (error) {
+                showRobhnyNotice('تعذر رفض الإثبات: ' + error.message, 'error');
+                return;
+            }
+
+            showRobhnyNotice('تم رفض إثبات المهمة بنجاح.');
             await loadAdminData();
         }
 
