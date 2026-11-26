@@ -20,9 +20,27 @@
             backdrop-filter: blur(12px);
             border: 1px solid rgba(255, 255, 255, 0.08);
         }
+        #vpn-block-screen {
+            position: fixed; inset: 0; z-index: 999999;
+            display: flex; align-items: center; justify-content: center;
+            padding: 22px; background: #080b12;
+        }
+        #vpn-block-screen.hidden { display: none !important; }
     </style>
 </head>
 <body class="min-h-screen pb-10">
+
+    <!-- شاشة منع الدخول عند رصد VPN / Proxy / Tor -->
+    <div id="vpn-block-screen" class="hidden" dir="rtl">
+        <div class="w-full max-w-md text-center rounded-3xl border border-red-500/40 bg-gray-900 p-7 shadow-2xl">
+            <div class="text-7xl mb-5">🛑</div>
+            <h1 class="text-2xl font-black text-red-400 mb-3">تم رصد VPN أو Proxy</h1>
+            <p class="text-base font-bold text-white mb-3">لا يمكن استخدام موقع ربحني أثناء تشغيل VPN أو البروكسي أو Tor.</p>
+            <p id="vpn-block-details" class="text-sm leading-7 text-gray-300 mb-6">يرجى إيقاف أي اتصال مخفي ثم إعادة الفحص للمتابعة.</p>
+            <button id="vpn-recheck-btn" type="button" onclick="retryVpnCheck()" class="w-full rounded-xl bg-emerald-500 hover:bg-emerald-600 py-4 text-base font-black text-black">فصلت الاتصال — إعادة الفحص</button>
+            <p id="vpn-recheck-message" class="text-xs text-gray-400 mt-4">لن تتمكن من دخول الموقع قبل اجتياز فحص الاتصال.</p>
+        </div>
+    </div>
 
     <!-- شاشة تسجيل الدخول / إنشاء حساب -->
     <div id="auth-section" class="min-h-screen flex items-center justify-center p-4">
@@ -424,13 +442,91 @@
         let selectedTaskForProof = null;
         let siteSettings = { points_per_dollar: 1000, min_withdraw: 1000, max_withdraw: 50000 };
 
+        let pendingLoginSession = null;
+        let vpnGatePassed = false;
+
         window.onload = async () => {
-            await fetchSettings();
             const { data: { session } } = await supabaseClient.auth.getSession();
-            if (session) {
-                await initUser(session.user);
+            pendingLoginSession = session;
+            const check = await performEntryVpnCheck();
+            if (check.blocked) {
+                showVpnBlock(check.reason);
+                return;
             }
+            vpnGatePassed = true;
+            await continueSiteStartup();
         };
+
+        async function continueSiteStartup() {
+            document.getElementById('vpn-block-screen').classList.add('hidden');
+            await fetchSettings();
+            if (pendingLoginSession) {
+                await initUser(pendingLoginSession.user);
+            }
+        }
+
+        function showVpnBlock(reason) {
+            document.getElementById('auth-section').classList.add('hidden');
+            document.getElementById('app-section').classList.add('hidden');
+            document.getElementById('admin-section').classList.add('hidden');
+            document.getElementById('banned-section').classList.add('hidden');
+            document.getElementById('vpn-block-details').textContent = reason || 'تم رصد اتصال VPN أو Proxy أو Tor. أوقفه ثم أعد الفحص.';
+            document.getElementById('vpn-block-screen').classList.remove('hidden');
+        }
+
+        async function performEntryVpnCheck() {
+            try {
+                const response = await fetch('https://iplogs.com/v1/check', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_agent: navigator.userAgent,
+                        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                        language: navigator.language
+                    })
+                });
+                if (!response.ok) throw new Error('تعذر الاتصال بخدمة فحص الشبكة');
+                const info = await response.json();
+                const ipInfo = info.ip_info || {};
+                const signals = Array.isArray(info.signals) ? info.signals : [];
+                const torDetected = signals.some(signal => signal && signal.type === 'tor_exit' && signal.matched === true);
+                const vpnDetected = info.is_vpn === true || ipInfo.is_vpn === true || info.verdict === 'vpn_detected';
+                const proxyDetected = ipInfo.is_proxy === true || info.is_proxy === true;
+                const suspicious = ['suspicious', 'vpn_likely'].includes(info.verdict);
+                if (vpnDetected || proxyDetected || torDetected) {
+                    const types = [vpnDetected ? 'VPN' : '', proxyDetected ? 'Proxy' : '', torDetected ? 'Tor' : ''].filter(Boolean).join(' / ');
+                    return { blocked: true, reason: `تم رصد ${types} على اتصالك الحالي. أوقفه أو غيّر الشبكة ثم اضغط إعادة الفحص.` };
+                }
+                if (suspicious) {
+                    return { blocked: true, reason: 'الاتصال الحالي مشبوه وقد يكون VPN أو Proxy. أوقف أي تطبيق VPN أو بروكسي أو جرّب شبكة الهاتف/الواي فاي العادية ثم أعد الفحص.' };
+                }
+                return { blocked: false };
+            } catch (error) {
+                console.warn('Entry VPN check failed:', error);
+                // لا نمنع المستخدم عند تعطل خدمة الفحص حتى لا يتوقف الموقع على الجميع.
+                return { blocked: false, checkFailed: true };
+            }
+        }
+
+        async function retryVpnCheck() {
+            const btn = document.getElementById('vpn-recheck-btn');
+            const msg = document.getElementById('vpn-recheck-message');
+            btn.disabled = true;
+            btn.textContent = 'جاري فحص الاتصال...';
+            msg.textContent = 'انتظر نتيجة الفحص';
+            const check = await performEntryVpnCheck();
+            if (check.blocked) {
+                document.getElementById('vpn-block-details').textContent = check.reason;
+                msg.textContent = 'ما زال الاتصال المخفي مرصودًا. افصل VPN أو Proxy ثم أعد المحاولة.';
+                btn.disabled = false;
+                btn.textContent = 'إعادة الفحص';
+                return;
+            }
+            vpnGatePassed = true;
+            btn.textContent = 'تم اجتياز الفحص';
+            msg.textContent = 'تم التحقق من الاتصال. جاري فتح الموقع...';
+            await continueSiteStartup();
+        }
 
         function toggleMenuDropdown() {
             document.getElementById('menu-dropdown').classList.toggle('hidden');
