@@ -90,6 +90,9 @@
                     </button>
                     <!-- القائمة المنسدلة -->
                     <div id="menu-dropdown" class="hidden absolute top-12 right-0 glass w-48 rounded-2xl p-2 shadow-2xl border border-gray-700 z-50 space-y-1.5">
+                        <button onclick="openAboutPage(); toggleMenuDropdown();" class="w-full text-right bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer">
+                            🏠 الصفحة الرئيسية / عن الموقع
+                        </button>
                         <button onclick="openProfile(); toggleMenuDropdown();" class="w-full text-right bg-sky-500/20 text-sky-300 hover:bg-sky-500/30 px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer">
                             👤 الملف الشخصي
                         </button>
@@ -230,6 +233,93 @@
                 <button id="delete-account-btn" type="button" onclick="deleteMyAccount()" class="w-full bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/40 text-rose-300 font-black py-3 rounded-xl transition">حذف حسابي نهائياً</button>
                 <p id="delete-account-message" class="text-center text-xs"></p>
             </section>
+        </div>
+
+        <!-- صفحة تعريف الموقع وطرق السحب -->
+        <div id="view-about" class="hidden glass p-5 rounded-2xl space-y-5">
+            <div class="flex items-center justify-between gap-3">
+                <div>
+                    <h2 class="text-xl font-black text-emerald-300">🏠 أهلاً بك في ربحني</h2>
+                    <p class="text-xs text-gray-400 mt-1">دليلك لاستخدام الموقع وسحب أرباحك</p>
+                </div>
+                <button type="button" onclick="switchTab('tasks')" class="bg-gray-800 border border-gray-700 text-gray-200 px-3 py-2 rounded-xl text-xs font-bold">رجوع ←</button>
+            </div>
+
+            <section class="bg-gray-900/70 border border-gray-800 rounded-2xl p-4 space-y-2">
+                <h3 class="font-black text-white">ما هو موقع ربحني؟</h3>
+                <p class="text-sm text-gray-300 leading-8">ربحني منصة تتيح لك جمع النقاط من خلال تنفيذ المهام المتاحة، والمشاركة باختيارك في الألعاب والاستطلاعات الموجودة داخل حائط العروض. اقرأ تعليمات كل مهمة واتبع شروطها حتى يتمكن مزود العرض من تأكيد إكمالها.</p>
+            </section>
+
+            <section class="bg-gray-900/70 border border-gray-800 rounded-2xl p-4 space-y-3">
+                <h3 class="font-black text-white">كيف تبدأ وتجمع النقاط؟</h3>
+                <ol class="list-decimal pr-5 text-sm text-gray-300 leading-8 space-y-1">
+                    <li>أنشئ حساباً باستخدام بريدك الإلكتروني وكلمة مرور، ثم سجّل الدخول.</li>
+                    <li>افتح تبويب «المهام» لمشاهدة المهام المتاحة، ونفّذ المطلوب كما هو موضح.</li>
+                    <li>افتح تبويب «العروض» لاختيار لعبة أو استطلاع مناسب لك، وأكمل شروط العرض.</li>
+                    <li>تُضاف المكافآت بعد وصول تأكيد التنفيذ من مزود المهمة أو العرض؛ وقد يتأخر التأكيد أو لا تُحتسب المكافأة إذا لم تتحقق الشروط.</li>
+                    <li>تابع رصيد نقاطك من أعلى الصفحة، ويمكنك مراجعة طلبات السحب من المحفظة.</li>
+                </ol>
+            </section>
+
+            <section class="bg-gray-900/70 border border-gray-800 rounded-2xl p-4 space-y-3">
+                <h3 class="font-black text-white">طرق سحب الأرباح</h3>
+                <p class="text-sm text-gray-300 leading-8">يمكنك تقديم طلب سحب إلى فودافون كاش أو إنستا باي. السحب يتم بمراجعة يدوية، وليس تحويلاً فورياً أو تلقائياً بمجرد الضغط على الزر.</p>
+                <div class="rounded-xl border border-gray-700 p-3 space-y-1">
+                    <h4 class="font-bold text-emerald-300">📱 فودافون كاش</h4>
+                    <p class="text-sm text-gray-300 leading-7">اكتب رقم محفظة فودافون كاش الصحيح في خانة بيانات السحب داخل صفحة «المحفظة»، وتأكد من أن الرقم يستقبل التحويلات.</p>
+                </div>
+                <div class="rounded-xl border border-gray-700 p-3 space-y-1">
+                    <h4 class="font-bold text-sky-300">💳 إنستا باي</h4>
+                    <p class="text-sm text-gray-300 leading-7">اكتب بيانات إنستا باي الصحيحة التي يمكن استقبال التحويل عليها في خانة بيانات السحب داخل صفحة «المحفظة».</p>
+                </div>
+                <ol class="list-decimal pr-5 text-sm text-gray-300 leading-8 space-y-1">
+                    <li>افتح «المحفظة» واكتب رقم فودافون كاش أو بيانات إنستا باي.</li>
+                    <li>اكتب عدد النقاط التي تريد سحبها، ثم اضغط «إرسال طلب السحب».</li>
+                    <li>تابع حالة الطلب في قائمة «طلبات السحب الخاصة بي».</li>
+                    <li>يراجع فريق الموقع الطلب، وبعد اعتماده يتم إرسال المبلغ يدوياً إلى البيانات التي أدخلتها وتحديث حالة الطلب.</li>
+                </ol>
+                <p class="text-xs text-amber-300 leading-7">مهم: راجع رقم الهاتف أو بيانات إنستا باي والمبلغ قبل الإرسال. لا ترسل كلمة مرور أو رمز تحقق أو الرقم السري الخاص بمحفظتك. الحد الأدنى وسعر تحويل النقاط يظهران داخل صفحة المحفظة وقد يتغيران.</p>
+            </section>
+
+            <section class="bg-gray-900/70 border border-gray-800 rounded-2xl p-4 space-y-2">
+                <h3 class="font-black text-white">إرشادات مهمة</h3>
+                <ul class="list-disc pr-5 text-sm text-gray-300 leading-8 space-y-1">
+                    <li>استخدم حساباً واحداً وبيانات صحيحة تخصك.</li>
+                    <li>لا تستخدم VPN أو Proxy أو Tor أثناء استخدام الموقع.</li>
+                    <li>لا تحاول التلاعب بالمهام أو تكرار تنفيذ العرض بالمخالفة لشروطه.</li>
+                    <li>احتفظ ببيانات حسابك ولا تشارك كلمة المرور أو رموز التحقق مع أي شخص.</li>
+                </ul>
+            </section>
+
+            <section id="privacy-policy-section" class="bg-gray-900/70 border border-emerald-500/30 rounded-2xl p-4 space-y-3">
+                <h3 class="font-black text-emerald-300">🔒 سياسة الخصوصية وشروط الاستخدام</h3>
+                <p class="text-sm text-gray-300 leading-8">باستخدامك موقع ربحني، فأنت توافق على الالتزام بالقواعد التالية. يُرجى قراءتها بعناية قبل استخدام الموقع أو طلب السحب.</p>
+                <ul class="list-disc pr-5 text-sm text-gray-300 leading-8 space-y-1">
+                    <li><strong class="text-white">العمر:</strong> يجب أن يكون عمرك 18 عاماً أو أكثر لاستخدام الموقع أو المشاركة في العروض وطلب السحب.</li>
+                    <li><strong class="text-white">اتصال الإنترنت:</strong> يُمنع استخدام VPN أو Proxy أو Tor أو أي وسيلة لإخفاء أو تغيير موقع الاتصال أو التحايل على أنظمة التحقق.</li>
+                    <li><strong class="text-white">حساب واحد:</strong> يُسمح بحساب واحد فقط لكل مستخدم. يُمنع إنشاء حسابات متعددة أو استخدام بيانات أشخاص آخرين.</li>
+                    <li><strong class="text-white">النزاهة:</strong> يُمنع الغش أو التلاعب بالنقاط أو استغلال الأخطاء أو تكرار العروض بطرق مخالفة. يجب تنفيذ كل عرض وفق شروط الجهة المعلنة عنه.</li>
+                    <li><strong class="text-white">المكافآت:</strong> لا تُحتسب المكافأة إلا بعد تأكيد مزود المهمة أو العرض. قد يتأخر التأكيد أو يُرفض إذا لم تكتمل الشروط، ولا يضمن ظهور العرض وحده الحصول على نقاط.</li>
+                    <li><strong class="text-white">السحب:</strong> تُراجع طلبات فودافون كاش وإنستا باي يدوياً. أرسل بيانات استقبال صحيحة، وتأكد منها قبل تقديم الطلب. لا يعني إرسال الطلب أن التحويل تم فوراً أو أنه تمت الموافقة عليه.</li>
+                    <li><strong class="text-white">حماية بياناتك:</strong> نستخدم بيانات الحساب والبيانات اللازمة لتشغيل الموقع، متابعة النقاط والطلبات، ومنع الاحتيال. لا ترسل كلمة مرورك أو الرقم السري لمحفظتك أو أي رمز تحقق لأي شخص.</li>
+                    <li><strong class="text-white">مزودو العروض:</strong> قد تنتقل إلى خدمات أو عروض تابعة لجهات خارجية؛ وتخضع مشاركتك فيها لشروط وسياسة خصوصية تلك الجهات أيضاً.</li>
+                    <li><strong class="text-white">مخالفة الشروط:</strong> قد يؤدي اكتشاف مخالفة أو نشاط مشبوه إلى إيقاف العرض أو تعليق الحساب أو رفض المكافأة أو طلب السحب بعد المراجعة.</li>
+                    <li><strong class="text-white">التحديثات:</strong> قد يتم تحديث هذه السياسة أو شروط الموقع عند الحاجة. استمرارك في استخدام الموقع بعد نشر التحديث يعني اطلاعك عليها.</li>
+                </ul>
+                <p class="text-xs text-amber-300 leading-7">إذا لم توافق على هذه الشروط، يُرجى التوقف عن استخدام الموقع. وللاستفسارات أو طلب المساعدة، تواصل مع المطور عبر Instagram.</p>
+            </section>
+
+            <div class="text-center border-t border-gray-700 pt-5 space-y-3">
+                <h2 class="text-2xl font-black text-emerald-400">⚡ ربحني</h2>
+                <p class="text-sm text-gray-300">للتحدث مع مطور الموقع لحل المشاكل أو الإبلاغ عن مشكلة</p>
+                <a href="https://www.instagram.com/dowep_1?fqnt=Y3JlZTl5MDgxZ3I4" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 hover:opacity-90 text-white font-bold px-5 py-3 rounded-xl text-sm">
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="2"/><circle cx="17.5" cy="6.8" r="1.2" fill="currentColor"/></svg>
+                    التواصل مع المطور عبر Instagram
+                </a>
+                <button type="button" onclick="document.getElementById('privacy-policy-section').scrollIntoView({behavior:'smooth',block:'start'});" class="inline-flex items-center justify-center gap-2 bg-gray-800 hover:bg-gray-700 border border-gray-600 text-gray-200 font-bold px-5 py-3 rounded-xl text-sm mr-2">
+                    🔒 سياسة الخصوصية والشروط
+                </button>
+            </div>
         </div>
 
         <!-- قسم عروض ayeT-Studios المدمج داخل الموقع -->
@@ -733,6 +823,16 @@
         function updateBalanceUI() {
             document.getElementById('user-balance').textContent = currentBalance + ' نقطة';
             document.getElementById('dashboard-balance').textContent = currentBalance;
+        }
+
+        function openAboutPage() {
+            ['wallet', 'tasks', 'offers', 'profile'].forEach(t => {
+                const page = document.getElementById('view-' + t);
+                if (page) page.classList.add('hidden');
+            });
+            document.getElementById('dashboard-navigation').classList.add('hidden');
+            document.getElementById('view-about').classList.remove('hidden');
+            window.scrollTo(0, 0);
         }
 
         function switchTab(tab) {
