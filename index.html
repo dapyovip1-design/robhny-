@@ -71,7 +71,10 @@
                         ☰
                     </button>
                     <!-- القائمة المنسدلة -->
-                    <div id="menu-dropdown" class="hidden absolute top-12 right-0 glass w-44 rounded-2xl p-2 shadow-2xl border border-gray-700 z-50 space-y-1.5">
+                    <div id="menu-dropdown" class="hidden absolute top-12 right-0 glass w-48 rounded-2xl p-2 shadow-2xl border border-gray-700 z-50 space-y-1.5">
+                        <button onclick="openProfile(); toggleMenuDropdown();" class="w-full text-right bg-sky-500/20 text-sky-300 hover:bg-sky-500/30 px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer">
+                            👤 الملف الشخصي
+                        </button>
                         <button id="dropdown-admin-btn" onclick="openAdminPage(); toggleMenuDropdown();" class="hidden w-full text-right bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500/30 px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer">
                             ⚙️ لوحة الأدمن
                         </button>
@@ -94,7 +97,7 @@
         </header>
 
         <!-- بطاقة الرصيد والتنقل -->
-        <div class="glass p-5 rounded-2xl text-center space-y-4">
+        <div id="dashboard-navigation" class="glass p-5 rounded-2xl text-center space-y-4">
             <div>
                 <p class="text-xs text-gray-400">رصيدك الحالي</p>
                 <h2 id="dashboard-balance" class="text-4xl font-black text-emerald-400 mt-1">0</h2>
@@ -104,6 +107,86 @@
                 <button onclick="switchTab('tasks')" id="tab-tasks" class="py-2 rounded-xl text-xs font-bold bg-emerald-500 text-black transition cursor-pointer">المهام</button>
                 <button onclick="switchTab('offers')" id="tab-offers" class="py-2 rounded-xl text-xs font-bold bg-gray-800 text-gray-300 transition cursor-pointer">العروض</button>
             </div>
+        </div>
+
+        <!-- صفحة الملف الشخصي -->
+        <div id="view-profile" class="hidden glass p-5 rounded-2xl space-y-5">
+            <div class="flex items-center justify-between gap-3">
+                <div>
+                    <h2 class="text-xl font-black text-white">إعدادات الملف الشخصي</h2>
+                    <p class="text-xs text-gray-400 mt-1">حدّث بيانات حسابك الشخصية</p>
+                </div>
+                <button type="button" onclick="switchTab('tasks')" class="bg-gray-800 border border-gray-700 text-gray-200 px-3 py-2 rounded-xl text-xs font-bold">رجوع ←</button>
+            </div>
+
+            <div class="bg-gray-900/70 border border-gray-800 rounded-2xl p-4 space-y-4">
+                <div class="flex items-center gap-4">
+                    <div id="profile-avatar-preview" class="w-20 h-20 rounded-full bg-sky-500/20 border-2 border-sky-400 flex items-center justify-center text-4xl">👤</div>
+                    <div class="flex-1">
+                        <h3 class="font-bold text-white">صورة الملف الشخصي</h3>
+                        <p class="text-xs text-gray-400 mt-1">اختر الصورة الرمزية التي تظهر في حسابك</p>
+                    </div>
+                </div>
+                <div class="grid grid-cols-4 gap-2" id="profile-avatar-options">
+                    <button type="button" onclick="selectProfileAvatar('👨🏻')" class="profile-avatar-option text-3xl rounded-xl bg-gray-800 p-2">👨🏻</button>
+                    <button type="button" onclick="selectProfileAvatar('👩🏻')" class="profile-avatar-option text-3xl rounded-xl bg-gray-800 p-2">👩🏻</button>
+                    <button type="button" onclick="selectProfileAvatar('🧑🏻')" class="profile-avatar-option text-3xl rounded-xl bg-gray-800 p-2">🧑🏻</button>
+                    <button type="button" onclick="selectProfileAvatar('👨🏽')" class="profile-avatar-option text-3xl rounded-xl bg-gray-800 p-2">👨🏽</button>
+                    <button type="button" onclick="selectProfileAvatar('👩🏽')" class="profile-avatar-option text-3xl rounded-xl bg-gray-800 p-2">👩🏽</button>
+                    <button type="button" onclick="selectProfileAvatar('🧔🏻')" class="profile-avatar-option text-3xl rounded-xl bg-gray-800 p-2">🧔🏻</button>
+                    <button type="button" onclick="selectProfileAvatar('👳🏻')" class="profile-avatar-option text-3xl rounded-xl bg-gray-800 p-2">👳🏻</button>
+                    <button type="button" onclick="selectProfileAvatar('🧕🏻')" class="profile-avatar-option text-3xl rounded-xl bg-gray-800 p-2">🧕🏻</button>
+                </div>
+            </div>
+
+            <form id="profile-form" class="bg-gray-900/70 border border-gray-800 rounded-2xl p-4 space-y-4" onsubmit="saveProfile(event)">
+                <div>
+                    <label class="block text-xs font-bold text-gray-300 mb-2">البريد الإلكتروني</label>
+                    <input id="profile-email" type="email" readonly class="w-full bg-gray-800/70 border border-gray-700 rounded-xl p-3 text-sm text-gray-400 text-left" dir="ltr">
+                    <p class="text-[10px] text-gray-500 mt-1">البريد مرتبط بحساب تسجيل الدخول ولا يمكن تغييره من هنا.</p>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-300 mb-2">الاسم الأول</label>
+                    <input id="profile-first-name" type="text" maxlength="60" placeholder="اكتب اسمك الأول" class="w-full bg-gray-950 border border-gray-700 rounded-xl p-3 text-sm text-white outline-none focus:border-emerald-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-300 mb-2">اسم العائلة</label>
+                    <input id="profile-last-name" type="text" maxlength="60" placeholder="اكتب اسم العائلة" class="w-full bg-gray-950 border border-gray-700 rounded-xl p-3 text-sm text-white outline-none focus:border-emerald-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-300 mb-2">العنوان</label>
+                    <input id="profile-address" type="text" maxlength="180" placeholder="العنوان بالتفصيل" class="w-full bg-gray-950 border border-gray-700 rounded-xl p-3 text-sm text-white outline-none focus:border-emerald-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-300 mb-2">المدينة</label>
+                    <input id="profile-city" type="text" maxlength="80" placeholder="المدينة" class="w-full bg-gray-950 border border-gray-700 rounded-xl p-3 text-sm text-white outline-none focus:border-emerald-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-300 mb-2">المحافظة / المنطقة</label>
+                    <input id="profile-region" type="text" maxlength="80" placeholder="المحافظة أو المنطقة" class="w-full bg-gray-950 border border-gray-700 rounded-xl p-3 text-sm text-white outline-none focus:border-emerald-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-300 mb-2">الرمز البريدي</label>
+                    <input id="profile-postal-code" type="text" maxlength="20" placeholder="الرمز البريدي" class="w-full bg-gray-950 border border-gray-700 rounded-xl p-3 text-sm text-white outline-none focus:border-emerald-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-300 mb-2">البلد الحالي</label>
+                    <select id="profile-country" class="w-full bg-gray-950 border border-gray-700 rounded-xl p-3 text-sm text-white outline-none focus:border-emerald-500">
+                        <option value="">اختر البلد</option>
+                        <option value="مصر">مصر</option>
+                        <option value="السعودية">السعودية</option>
+                        <option value="الإمارات">الإمارات</option>
+                        <option value="الكويت">الكويت</option>
+                        <option value="الأردن">الأردن</option>
+                        <option value="المغرب">المغرب</option>
+                        <option value="الجزائر">الجزائر</option>
+                        <option value="تونس">تونس</option>
+                        <option value="أخرى">أخرى</option>
+                    </select>
+                </div>
+                <p id="profile-save-message" class="text-center text-xs"></p>
+                <button id="profile-save-btn" type="submit" class="w-full bg-violet-600 hover:bg-violet-500 text-white font-black py-3 rounded-xl transition">حفظ التغييرات</button>
+            </form>
         </div>
 
         <!-- قسم العروض -->
@@ -521,6 +604,8 @@
         }
 
         function switchTab(tab) {
+            document.getElementById('view-profile').classList.add('hidden');
+            document.getElementById('dashboard-navigation').classList.remove('hidden');
             ['wallet', 'tasks', 'offers'].forEach(t => {
                 document.getElementById('view-' + t).classList.add('hidden');
                 const btn = document.getElementById('tab-' + t);
@@ -533,6 +618,96 @@
             activeBtn.classList.remove('bg-gray-800', 'text-gray-300');
             activeBtn.classList.add('bg-emerald-500', 'text-black');
             if (tab === 'wallet') loadMyWithdrawals();
+        }
+
+        let selectedProfileAvatar = '👤';
+
+        async function openProfile() {
+            if (!currentUser) return;
+            ['wallet', 'tasks', 'offers'].forEach(t => document.getElementById('view-' + t).classList.add('hidden'));
+            document.getElementById('dashboard-navigation').classList.add('hidden');
+            document.getElementById('view-profile').classList.remove('hidden');
+            const msg = document.getElementById('profile-save-message');
+            msg.textContent = 'جاري تحميل بياناتك...';
+            msg.className = 'text-center text-xs text-gray-400';
+            document.getElementById('profile-email').value = currentUser.email || '';
+
+            const { data, error } = await supabaseClient
+                .from('profiles')
+                .select('first_name,last_name,address,city,region,postal_code,country,avatar')
+                .eq('id', currentUser.id)
+                .maybeSingle();
+
+            if (error) {
+                console.error('Profile load error:', error);
+                msg.textContent = 'تعذر تحميل البيانات. تأكد من تنفيذ كود إعداد الملف الشخصي في Supabase.';
+                msg.className = 'text-center text-xs text-red-400';
+                return;
+            }
+
+            const profile = data || {};
+            document.getElementById('profile-first-name').value = profile.first_name || '';
+            document.getElementById('profile-last-name').value = profile.last_name || '';
+            document.getElementById('profile-address').value = profile.address || '';
+            document.getElementById('profile-city').value = profile.city || '';
+            document.getElementById('profile-region').value = profile.region || '';
+            document.getElementById('profile-postal-code').value = profile.postal_code || '';
+            document.getElementById('profile-country').value = profile.country || '';
+            selectedProfileAvatar = profile.avatar || '👤';
+            document.getElementById('profile-avatar-preview').textContent = selectedProfileAvatar;
+            msg.textContent = '';
+            highlightProfileAvatar();
+        }
+
+        function selectProfileAvatar(avatar) {
+            selectedProfileAvatar = avatar;
+            document.getElementById('profile-avatar-preview').textContent = avatar;
+            highlightProfileAvatar();
+        }
+
+        function highlightProfileAvatar() {
+            document.querySelectorAll('.profile-avatar-option').forEach(btn => {
+                const active = btn.textContent.trim() === selectedProfileAvatar;
+                btn.classList.toggle('ring-2', active);
+                btn.classList.toggle('ring-emerald-400', active);
+            });
+        }
+
+        async function saveProfile(event) {
+            event.preventDefault();
+            if (!currentUser) return;
+            const btn = document.getElementById('profile-save-btn');
+            const msg = document.getElementById('profile-save-message');
+            btn.disabled = true;
+            btn.textContent = 'جاري الحفظ...';
+            msg.textContent = '';
+
+            const updates = {
+                first_name: document.getElementById('profile-first-name').value.trim(),
+                last_name: document.getElementById('profile-last-name').value.trim(),
+                address: document.getElementById('profile-address').value.trim(),
+                city: document.getElementById('profile-city').value.trim(),
+                region: document.getElementById('profile-region').value.trim(),
+                postal_code: document.getElementById('profile-postal-code').value.trim(),
+                country: document.getElementById('profile-country').value,
+                avatar: selectedProfileAvatar
+            };
+
+            const { error } = await supabaseClient
+                .from('profiles')
+                .update(updates)
+                .eq('id', currentUser.id);
+
+            btn.disabled = false;
+            btn.textContent = 'حفظ التغييرات';
+            if (error) {
+                console.error('Profile save error:', error);
+                msg.textContent = 'فشل الحفظ: ' + error.message;
+                msg.className = 'text-center text-xs text-red-400';
+            } else {
+                msg.textContent = '✅ تم حفظ بيانات الملف الشخصي بنجاح';
+                msg.className = 'text-center text-xs text-emerald-400';
+            }
         }
 
         async function loadTasks() {
