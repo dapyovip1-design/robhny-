@@ -187,6 +187,31 @@
                 <p id="profile-save-message" class="text-center text-xs"></p>
                 <button id="profile-save-btn" type="submit" class="w-full bg-violet-600 hover:bg-violet-500 text-white font-black py-3 rounded-xl transition">حفظ التغييرات</button>
             </form>
+
+            <!-- معلومات الاتصال الحالي -->
+            <section class="bg-gray-900/70 border border-gray-800 rounded-2xl p-5 space-y-4">
+                <h3 class="text-lg font-black text-white">الاتصال الحالي</h3>
+                <div class="bg-gray-950 border border-gray-700 rounded-2xl p-4 flex items-center gap-4">
+                    <div id="connection-flag" class="text-4xl">🌐</div>
+                    <div class="min-w-0 flex-1 text-right">
+                        <p id="connection-country" class="font-bold text-white">جاري تحديد البلد...</p>
+                        <p class="text-sm text-gray-400">عنوان IP:</p>
+                        <p id="connection-ip" class="text-lg text-gray-200 break-all" dir="ltr">جاري الفحص...</p>
+                        <span id="connection-status" class="inline-block mt-2 text-xs font-bold px-3 py-1 rounded-full bg-gray-700 text-gray-200">جاري فحص الاتصال</span>
+                    </div>
+                </div>
+                <p class="text-sm leading-7 text-gray-400">يُمنع استخدام VPN أو البروكسي أو Tor لتغيير موقع الاتصال أو التحايل على شروط المنصة. قد لا تتمكن قواعد الفحص من اكتشاف جميع أنواع الشبكات المخفية.</p>
+                <p id="connection-check-note" class="text-[11px] text-amber-300">سيتم عرض الموقع الجغرافي للعنوان. التحقق الفعلي من VPN والبروكسي يحتاج خدمة فحص توفر هذه البيانات.</p>
+                <button type="button" onclick="loadConnectionInfo()" class="w-full bg-gray-800 hover:bg-gray-700 border border-gray-700 text-white font-bold py-2.5 rounded-xl text-sm">إعادة فحص الاتصال</button>
+            </section>
+
+            <!-- حذف الحساب نهائياً -->
+            <section class="bg-red-950/20 border border-rose-500/40 rounded-2xl p-5 space-y-4">
+                <h3 class="text-lg font-black text-rose-300">حذف الحساب</h3>
+                <p class="text-sm leading-7 text-gray-300">احذف حسابك في ربحني نهائياً وقم بإخفاء بيانات ملفك الشخصي. لا يمكن التراجع عن هذا الإجراء. سيتم حذف حساب تسجيل الدخول والبيانات المرتبطة التي تسمح قاعدة البيانات بحذفها. وقد تظل بعض سجلات المعاملات محفوظة وفق قيود قاعدة البيانات ومتطلبات الأمان والمحاسبة.</p>
+                <button id="delete-account-btn" type="button" onclick="deleteMyAccount()" class="w-full bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/40 text-rose-300 font-black py-3 rounded-xl transition">حذف حسابي نهائياً</button>
+                <p id="delete-account-message" class="text-center text-xs"></p>
+            </section>
         </div>
 
         <!-- قسم العروض -->
@@ -631,6 +656,7 @@
             msg.textContent = 'جاري تحميل بياناتك...';
             msg.className = 'text-center text-xs text-gray-400';
             document.getElementById('profile-email').value = currentUser.email || '';
+            loadConnectionInfo();
 
             const { data, error } = await supabaseClient
                 .from('profiles')
@@ -707,6 +733,101 @@
             } else {
                 msg.textContent = '✅ تم حفظ بيانات الملف الشخصي بنجاح';
                 msg.className = 'text-center text-xs text-emerald-400';
+            }
+        }
+
+        // فحص عنوان IP والبلد وإشارات VPN/Proxy/Tor عبر IPLogs.
+        async function loadConnectionInfo() {
+            const ipEl = document.getElementById('connection-ip');
+            const countryEl = document.getElementById('connection-country');
+            const flagEl = document.getElementById('connection-flag');
+            const statusEl = document.getElementById('connection-status');
+            const noteEl = document.getElementById('connection-check-note');
+            if (!ipEl || !countryEl || !flagEl || !statusEl) return;
+            ipEl.textContent = 'جاري الفحص...';
+            countryEl.textContent = 'جاري تحديد البلد...';
+            statusEl.textContent = 'جاري فحص الاتصال';
+            statusEl.className = 'inline-block mt-2 text-xs font-bold px-3 py-1 rounded-full bg-gray-700 text-gray-200';
+            try {
+                const response = await fetch('https://iplogs.com/v1/check', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_agent: navigator.userAgent,
+                        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                        language: navigator.language
+                    })
+                });
+                if (!response.ok) throw new Error('خدمة فحص VPN غير متاحة حالياً');
+                const info = await response.json();
+                const ipInfo = info.ip_info || {};
+                ipEl.textContent = ipInfo.ip || 'غير متاح';
+                const country = ipInfo.country || 'غير معروف';
+                const city = ipInfo.city || '';
+                countryEl.textContent = city ? `${country} - ${city}` : country;
+                const flags = { 'Egypt':'🇪🇬', 'مصر':'🇪🇬', 'Saudi Arabia':'🇸🇦', 'United Arab Emirates':'🇦🇪', 'Kuwait':'🇰🇼', 'Jordan':'🇯🇴', 'United States':'🇺🇸', 'United Kingdom':'🇬🇧' };
+                flagEl.textContent = flags[country] || '🌐';
+
+                const signals = Array.isArray(info.signals) ? info.signals : [];
+                const torDetected = signals.some(signal => signal && signal.type === 'tor_exit' && signal.matched === true);
+                const vpnDetected = info.is_vpn === true || ipInfo.is_vpn === true || info.verdict === 'vpn_detected';
+                const proxyDetected = ipInfo.is_proxy === true;
+                const suspicious = vpnDetected || proxyDetected || torDetected || ['suspicious', 'vpn_likely'].includes(info.verdict);
+
+                if (vpnDetected || proxyDetected || torDetected) {
+                    const reasons = [vpnDetected ? 'VPN' : '', proxyDetected ? 'Proxy' : '', torDetected ? 'Tor' : ''].filter(Boolean).join(' / ');
+                    statusEl.textContent = `⚠️ تم رصد ${reasons}`;
+                    statusEl.className = 'inline-block mt-2 text-xs font-bold px-3 py-1 rounded-full bg-red-500/20 text-red-300';
+                    if (noteEl) noteEl.textContent = 'رصدت خدمة الفحص مؤشرات على استخدام اتصال مخفي. قد تكون هناك نتائج خاطئة؛ راجع الحالة قبل اتخاذ أي إجراء على الحساب.';
+                } else if (suspicious) {
+                    statusEl.textContent = '⚠️ اتصال مشبوه - يحتاج مراجعة';
+                    statusEl.className = 'inline-block mt-2 text-xs font-bold px-3 py-1 rounded-full bg-amber-500/20 text-amber-300';
+                    if (noteEl) noteEl.textContent = 'ظهرت مؤشرات اشتباه وليست دليلاً قاطعاً على VPN أو Proxy. لا تحظر الحساب تلقائياً اعتماداً على هذه النتيجة وحدها.';
+                } else {
+                    statusEl.textContent = 'اتصال طبيعي وفق نتيجة الفحص';
+                    statusEl.className = 'inline-block mt-2 text-xs font-bold px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-300';
+                    if (noteEl) noteEl.textContent = 'لم ترصد خدمة الفحص مؤشرات VPN أو Proxy أو Tor في هذا الفحص. النتيجة تقديرية وقد لا تكتشف كل أنواع الشبكات المخفية.';
+                }
+            } catch (error) {
+                ipEl.textContent = 'تعذر تحديده حالياً';
+                countryEl.textContent = 'الموقع غير متاح';
+                flagEl.textContent = '🌐';
+                statusEl.textContent = 'تعذر فحص الاتصال';
+                statusEl.className = 'inline-block mt-2 text-xs font-bold px-3 py-1 rounded-full bg-red-500/15 text-red-300';
+                if (noteEl) noteEl.textContent = 'خدمة الفحص لم تستجب. حاول مرة أخرى لاحقاً؛ لم يتم اعتبار الحساب آمناً أو مخالفاً.';
+                console.warn('IP security lookup failed:', error);
+            }
+        }
+
+        // حذف الحساب يتم من خلال Edge Function تستخدم صلاحية الخادم ولا تكشف Service Role Key للمتصفح.
+        async function deleteMyAccount() {
+            if (!currentUser) return;
+            const first = confirm('هل أنت متأكد أنك تريد حذف حسابك نهائياً؟ لا يمكن التراجع عن هذا الإجراء.');
+            if (!first) return;
+            const confirmation = prompt('للتأكيد النهائي، اكتب DELETE باللغة الإنجليزية:');
+            if (confirmation !== 'DELETE') {
+                alert('تم إلغاء الحذف؛ لم تكتب DELETE بشكل صحيح.');
+                return;
+            }
+            const btn = document.getElementById('delete-account-btn');
+            const msg = document.getElementById('delete-account-message');
+            btn.disabled = true;
+            btn.textContent = 'جاري حذف الحساب...';
+            msg.textContent = 'يرجى الانتظار وعدم إغلاق الصفحة.';
+            msg.className = 'text-center text-xs text-amber-300';
+            try {
+                const { data, error } = await supabaseClient.functions.invoke('delete-account', { body: { confirmation: 'DELETE' } });
+                if (error) throw error;
+                if (!data || data.success !== true) throw new Error(data?.error || 'لم يتم تأكيد حذف الحساب من الخادم');
+                await supabaseClient.auth.signOut();
+                alert('تم حذف حسابك بنجاح.');
+                location.reload();
+            } catch (error) {
+                console.error('Account deletion failed:', error);
+                msg.textContent = 'تعذر حذف الحساب: ' + (error.message || 'خطأ غير معروف') + ' — تأكد من نشر دالة delete-account في Supabase.';
+                msg.className = 'text-center text-xs text-red-300';
+                btn.disabled = false;
+                btn.textContent = 'حذف حسابي نهائياً';
             }
         }
 
