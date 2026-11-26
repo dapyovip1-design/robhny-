@@ -40,6 +40,11 @@
         .robhny-notice.warning .notice-brand { color: #fbbf24; }
         .robhny-notice .notice-message { color: #e5e7eb; font-size: 13px; line-height: 1.8; margin-top: 3px; }
         @keyframes robhnyNoticeIn { from { opacity: 0; transform: translateY(-12px); } to { opacity: 1; transform: translateY(0); } }
+        .robhny-dialog-backdrop { position:fixed; inset:0; z-index:1000000; display:flex; align-items:center; justify-content:center; padding:20px; background:rgba(0,0,0,.78); direction:rtl; }
+        .robhny-dialog { width:100%; max-width:380px; padding:22px; border-radius:22px; background:#111827; border:1px solid rgba(52,211,153,.35); box-shadow:0 24px 70px rgba(0,0,0,.6); font-family:'Cairo',sans-serif; }
+        .robhny-dialog input { width:100%; margin-top:14px; padding:12px; border-radius:12px; background:#030712; border:1px solid #374151; color:white; direction:ltr; text-align:left; outline:none; }
+        .robhny-dialog-actions { display:flex; gap:10px; margin-top:18px; }
+        .robhny-dialog-actions button { flex:1; border-radius:12px; padding:11px; font-weight:900; }
     </style>
 </head>
 <body class="min-h-screen pb-10">
@@ -594,6 +599,15 @@
             }
         });
         let userRealtimeChannel = null;
+        let realtimeRefreshTimers = {};
+
+        function scheduleRealtimeRefresh(key, callback, delay = 250) {
+            if (realtimeRefreshTimers[key]) clearTimeout(realtimeRefreshTimers[key]);
+            realtimeRefreshTimers[key] = setTimeout(() => {
+                delete realtimeRefreshTimers[key];
+                Promise.resolve().then(callback).catch(error => console.warn('Realtime refresh failed:', error));
+            }, delay);
+        }
         let currentUser = null;
         let currentBalance = 0;
         let selectedTaskForProof = null;
@@ -915,6 +929,59 @@
             robhnyNoticeTimer = setTimeout(() => notice.remove(), 6000);
         }
 
+        // توحيد جميع رسائل الموقع تحت اسم «ربحني» بدلاً من نوافذ المتصفح التي تعرض رابط GitHub.
+        window.alert = function(message) {
+            const text = String(message ?? '');
+            const isWarning = /خطأ|تعذر|فشل|إلغاء|🚫|يرجى|لم يتم/i.test(text);
+            showRobhnyNotice(text, isWarning ? 'warning' : 'success');
+        };
+
+        function robhnyDialog(message, options = {}) {
+            return new Promise(resolve => {
+                const backdrop = document.createElement('div');
+                backdrop.className = 'robhny-dialog-backdrop';
+                const box = document.createElement('div');
+                box.className = 'robhny-dialog';
+                const heading = document.createElement('div');
+                heading.className = 'text-lg font-black text-emerald-400 mb-3';
+                heading.textContent = '⚡ ربحني';
+                const body = document.createElement('p');
+                body.className = 'text-sm leading-7 text-gray-200 whitespace-pre-wrap';
+                body.textContent = String(message ?? '');
+                box.append(heading, body);
+                let field = null;
+                if (options.input) {
+                    field = document.createElement('input');
+                    field.type = 'text';
+                    field.placeholder = options.placeholder || '';
+                    field.autocomplete = 'off';
+                    box.appendChild(field);
+                }
+                const actions = document.createElement('div');
+                actions.className = 'robhny-dialog-actions';
+                const cancel = document.createElement('button');
+                cancel.type = 'button';
+                cancel.textContent = options.input ? 'إلغاء' : 'رجوع';
+                cancel.className = 'bg-gray-700 text-white';
+                const accept = document.createElement('button');
+                accept.type = 'button';
+                accept.textContent = options.input ? 'تأكيد' : 'موافق';
+                accept.className = 'bg-emerald-500 text-black';
+                const finish = value => { backdrop.remove(); resolve(value); };
+                cancel.addEventListener('click', () => finish(options.input ? null : false));
+                accept.addEventListener('click', () => finish(options.input ? field.value : true));
+                actions.append(cancel, accept);
+                box.appendChild(actions);
+                backdrop.appendChild(box);
+                backdrop.addEventListener('click', event => { if (event.target === backdrop) finish(options.input ? null : false); });
+                document.body.appendChild(backdrop);
+                if (field) { field.focus(); field.addEventListener('keydown', event => { if (event.key === 'Enter') finish(field.value); }); }
+                accept.focus();
+            });
+        }
+        function robhnyConfirm(message) { return robhnyDialog(message); }
+        function robhnyPrompt(message, placeholder = '') { return robhnyDialog(message, { input: true, placeholder }); }
+
         function setupUserRealtime(user) {
             if (userRealtimeChannel) {
                 supabaseClient.removeChannel(userRealtimeChannel);
@@ -954,9 +1021,38 @@
                 event: '*', schema: 'public', table: 'withdrawals', filter: 'user_id=eq.' + user.id
             }, () => loadMyWithdrawals());
 
+            // أي إضافة أو تعديل أو حذف لمهمة يظهر للمستخدم فورًا.
+            channel.on('postgres_changes', {
+                event: '*', schema: 'public', table: 'site_tasks'
+            }, () => scheduleRealtimeRefresh('user-tasks', () => loadTasks()));
+
             channel.on('postgres_changes', {
                 event: '*', schema: 'public', table: 'task_submissions', filter: 'user_id=eq.' + user.id
-            }, () => loadTasks());
+            }, () => scheduleRealtimeRefresh('user-submissions', () => loadTasks()));
+
+            // لوحة الأدمن تستمع لكل التغييرات المهمة وتحدّث الأقسام المفتوحة دون Refresh.
+            if (user.email && user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
+                const refreshAdminIfVisible = () => {
+                    const adminSection = document.getElementById('admin-section');
+                    if (adminSection && !adminSection.classList.contains('hidden')) {
+                        scheduleRealtimeRefresh('admin-data', () => loadAdminData(), 350);
+                    }
+                };
+                ['site_tasks', 'task_submissions', 'withdrawals', 'profiles', 'site_settings'].forEach(tableName => {
+                    channel.on('postgres_changes', {
+                        event: '*', schema: 'public', table: tableName
+                    }, () => {
+                        if (tableName === 'site_tasks') {
+                            scheduleRealtimeRefresh('admin-and-user-tasks', async () => {
+                                await loadTasks();
+                                refreshAdminIfVisible();
+                            }, 250);
+                        } else {
+                            refreshAdminIfVisible();
+                        }
+                    });
+                });
+            }
 
             channel.subscribe(status => {
                 if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
@@ -1187,9 +1283,9 @@
         // حذف الحساب يتم من خلال Edge Function تستخدم صلاحية الخادم ولا تكشف Service Role Key للمتصفح.
         async function deleteMyAccount() {
             if (!currentUser) return;
-            const first = confirm('هل أنت متأكد أنك تريد حذف حسابك نهائياً؟ لا يمكن التراجع عن هذا الإجراء.');
+            const first = await robhnyConfirm('هل أنت متأكد أنك تريد حذف حسابك نهائياً؟ لا يمكن التراجع عن هذا الإجراء.');
             if (!first) return;
-            const confirmation = prompt('للتأكيد النهائي، اكتب DELETE باللغة الإنجليزية:');
+            const confirmation = await robhnyPrompt('للتأكيد النهائي، اكتب DELETE باللغة الإنجليزية:', 'DELETE');
             if (confirmation !== 'DELETE') {
                 alert('تم إلغاء الحذف؛ لم تكتب DELETE بشكل صحيح.');
                 return;
@@ -1403,7 +1499,7 @@
 
         async function reviewWithdrawal(withdrawalId, decision) {
             const label = decision === 'approved' ? 'الموافقة على طلب السحب؟ سيتم خصم النقاط.' : 'رفض الطلب؟ سيتم إرجاع النقاط إذا كانت قد خُصمت سابقاً.';
-            if (!confirm(label)) return;
+            if (!(await robhnyConfirm(label))) return;
             const { data, error } = await supabaseClient.rpc('admin_review_withdrawal', {
                 p_withdrawal_id: withdrawalId,
                 p_decision: decision
@@ -1647,7 +1743,7 @@
         }
 
         async function deleteTask(id) {
-            if (!confirm('هل أنت متأكد من حذف هذه المهمة؟')) return;
+            if (!(await robhnyConfirm('هل أنت متأكد من حذف هذه المهمة؟'))) return;
 
             const { error } = await supabaseClient.from('site_tasks').delete().eq('id', id);
             if (!error) {
