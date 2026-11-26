@@ -26,6 +26,20 @@
             padding: 22px; background: #080b12;
         }
         #vpn-block-screen.hidden { display: none !important; }
+
+        .robhny-notice {
+            position: fixed; top: 18px; left: 16px; right: 16px; z-index: 999999;
+            max-width: 420px; margin: 0 auto; padding: 16px 18px;
+            border-radius: 18px; background: #111827; color: #f9fafb;
+            border: 1px solid rgba(52,211,153,.45); box-shadow: 0 18px 50px rgba(0,0,0,.45);
+            display: flex; align-items: flex-start; gap: 12px; direction: rtl;
+            font-family: 'Cairo', sans-serif; animation: robhnyNoticeIn .25s ease-out;
+        }
+        .robhny-notice.warning { border-color: rgba(251,191,36,.55); }
+        .robhny-notice .notice-brand { color: #34d399; font-weight: 900; font-size: 15px; }
+        .robhny-notice.warning .notice-brand { color: #fbbf24; }
+        .robhny-notice .notice-message { color: #e5e7eb; font-size: 13px; line-height: 1.8; margin-top: 3px; }
+        @keyframes robhnyNoticeIn { from { opacity: 0; transform: translateY(-12px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body class="min-h-screen pb-10">
@@ -885,6 +899,22 @@
         }
 
 
+        let robhnyNoticeTimer = null;
+        function showRobhnyNotice(message, type = 'success') {
+            const oldNotice = document.getElementById('robhny-balance-notice');
+            if (oldNotice) oldNotice.remove();
+            if (robhnyNoticeTimer) clearTimeout(robhnyNoticeTimer);
+            const notice = document.createElement('div');
+            notice.id = 'robhny-balance-notice';
+            notice.className = 'robhny-notice' + (type === 'warning' ? ' warning' : '');
+            notice.setAttribute('role', 'status');
+            notice.innerHTML = `<div class="text-2xl">${type === 'warning' ? '⚠️' : '⚡'}</div><div class="flex-1"><div class="notice-brand">ربحني</div><div class="notice-message"></div></div><button type="button" aria-label="إغلاق" class="text-gray-400 text-lg leading-none">×</button>`;
+            notice.querySelector('.notice-message').textContent = message;
+            notice.querySelector('button').addEventListener('click', () => notice.remove());
+            document.body.appendChild(notice);
+            robhnyNoticeTimer = setTimeout(() => notice.remove(), 6000);
+        }
+
         function setupUserRealtime(user) {
             if (userRealtimeChannel) {
                 supabaseClient.removeChannel(userRealtimeChannel);
@@ -905,8 +935,8 @@
                 const difference = nextBalance - Number(currentBalance || 0);
                 currentBalance = nextBalance;
                 updateBalanceUI();
-                if (difference > 0) alert(`🎉 مبروك! تمت إضافة ${difference} نقطة إلى حسابك.`);
-                else if (difference < 0) alert(`⚠️ تم تحديث رصيدك بخصم ${Math.abs(difference)} نقطة.`);
+                if (difference > 0) showRobhnyNotice(`مبروك! تمت إضافة ${difference} نقطة إلى رصيدك.`);
+                else if (difference < 0) showRobhnyNotice(`تم خصم ${Math.abs(difference)} نقطة من رصيدك.`, 'warning');
             });
 
             channel.on('postgres_changes', {
