@@ -844,17 +844,35 @@
                 wList.innerHTML = `<p class="text-xs text-red-400">تعذر تحميل طلبات السحب: ${withdrawalsError.message}</p>`;
             } else if (withdrawals && withdrawals.length > 0) {
                 wList.innerHTML = '';
+                // جلب بيانات أصحاب طلبات السحب من profiles لعرض الاسم والبريد بدلاً من UUID.
+                const withdrawalUserIds = [...new Set(withdrawals.map(w => w.user_id).filter(Boolean))];
+                let withdrawalProfiles = [];
+                if (withdrawalUserIds.length) {
+                    const { data: profileRows, error: profileRowsError } = await supabaseClient
+                        .from('profiles').select('*').in('id', withdrawalUserIds);
+                    if (!profileRowsError && profileRows) withdrawalProfiles = profileRows;
+                    else console.warn('تعذر جلب بيانات أصحاب طلبات السحب:', profileRowsError);
+                }
+                const withdrawalProfilesById = Object.fromEntries(withdrawalProfiles.map(profile => [profile.id, profile]));
+                const escapeWithdrawalText = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
                 withdrawals.forEach(w => {
                     const pending = w.status === 'pending';
                     const statusLabel = w.status === 'pending' ? 'قيد المراجعة' : (w.status === 'approved' ? 'تمت الموافقة' : (w.status === 'rejected' ? 'مرفوض' : w.status));
                     const safeId = String(w.id).replace(/[^a-f0-9-]/gi, '');
+                    const withdrawalProfile = withdrawalProfilesById[w.user_id] || {};
+                    const withdrawalUsername = withdrawalProfile.username || withdrawalProfile.full_name || withdrawalProfile.display_name || withdrawalProfile.name || 'اسم المستخدم غير مسجل';
+                    const withdrawalEmail = withdrawalProfile.email || 'البريد الإلكتروني غير متاح في الملف الشخصي';
                     wList.innerHTML += `
                         <div class="bg-gray-900 p-3 rounded-xl border border-gray-800 flex flex-col gap-2">
                             <div class="flex justify-between items-center gap-2">
-                                <span class="text-[11px] font-bold text-white break-all">${w.wallet_address || 'بدون رقم محفظة'}</span>
+                                <span class="text-[11px] font-bold text-white break-all">${escapeWithdrawalText(w.wallet_address || 'بدون رقم محفظة')}</span>
                                 <span class="text-[10px] px-2 py-1 rounded-lg ${pending ? 'bg-amber-500/20 text-amber-300' : (w.status === 'approved' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-red-500/20 text-red-300')}">${statusLabel}</span>
                             </div>
-                            <p class="text-[10px] text-gray-400 break-all">${w.method || 'محفظة'} • المستخدم: ${w.user_id}</p>
+                            <div class="bg-gray-950/70 rounded-lg p-2 space-y-1">
+                                <p class="text-[11px] text-white font-bold break-all">👤 اسم المستخدم: ${escapeWithdrawalText(withdrawalUsername)}</p>
+                                <p class="text-[10px] text-sky-300 break-all">✉️ البريد الإلكتروني: ${escapeWithdrawalText(withdrawalEmail)}</p>
+                            </div>
+                            <p class="text-[10px] text-gray-400 break-all">${escapeWithdrawalText(w.method || 'محفظة')}</p>
                             <p class="text-[11px] text-amber-400 font-bold">${Number(w.amount)} نقطة</p>
                             ${pending ? `<div class="flex gap-2"><button onclick="reviewWithdrawal('${safeId}', 'approved')" class="flex-1 bg-emerald-500 text-black text-[10px] font-bold py-2 rounded-lg">✅ موافقة وخصم</button><button onclick="reviewWithdrawal('${safeId}', 'rejected')" class="flex-1 bg-red-500/20 text-red-300 text-[10px] font-bold py-2 rounded-lg">❌ رفض</button></div>` : ''}
                         </div>
