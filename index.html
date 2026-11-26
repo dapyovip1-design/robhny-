@@ -1129,7 +1129,13 @@
         }
 
         function openOfferwall() {
-            window.open(`https://www.ayetstudios.com/offers/web_offerwall/YOUR_PLACEMENT_ID?external_identifier=${currentUser.id}`, '_blank');
+            if (!currentUser || !currentUser.id) {
+                alert('سجل دخولك أولاً لفتح العروض');
+                return;
+            }
+
+            const offerwallUrl = `https://offerwall.ayet.io/offers?adSlot=31664&externalIdentifier=${encodeURIComponent(currentUser.id)}`;
+            window.open(offerwallUrl, '_blank', 'noopener,noreferrer');
         }
 
         function copyToClipboard(text) {
