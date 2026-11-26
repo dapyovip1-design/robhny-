@@ -30,6 +30,16 @@
 </head>
 <body class="min-h-screen pb-10">
 
+    <!-- شاشة انتظار استعادة جلسة المستخدم قبل إظهار تسجيل الدخول -->
+    <div id="startup-screen" class="fixed inset-0 z-[999998] flex items-center justify-center bg-[#0b0f19]" dir="rtl">
+        <div class="text-center">
+            <div class="text-5xl mb-4">⚡</div>
+            <div class="text-xl font-black text-emerald-400">ربحني</div>
+            <p class="text-sm text-gray-400 mt-3">جاري تجهيز حسابك...</p>
+            <div class="w-10 h-1 bg-emerald-500/20 rounded-full mx-auto mt-4 overflow-hidden"><div class="h-full w-1/2 bg-emerald-400 rounded-full animate-pulse"></div></div>
+        </div>
+    </div>
+
     <!-- شاشة منع الدخول عند رصد VPN / Proxy / Tor -->
     <div id="vpn-block-screen" class="hidden" dir="rtl">
         <div class="w-full max-w-md text-center rounded-3xl border border-red-500/40 bg-gray-900 p-7 shadow-2xl">
@@ -43,7 +53,7 @@
     </div>
 
     <!-- شاشة تسجيل الدخول / إنشاء حساب -->
-    <div id="auth-section" class="min-h-screen flex items-center justify-center p-4">
+    <div id="auth-section" class="hidden min-h-screen flex items-center justify-center p-4">
         <div class="glass w-full max-w-md p-6 rounded-2xl shadow-2xl">
             <div class="text-center mb-6">
                 <h1 class="text-3xl font-black text-emerald-400">⚡ ربحني</h1>
@@ -593,6 +603,7 @@
                 await authInitPromise;
             } catch (error) {
                 console.error('User startup failed:', error);
+                document.getElementById('startup-screen')?.classList.add('hidden');
                 document.getElementById('auth-section').classList.remove('hidden');
                 document.getElementById('app-section').classList.add('hidden');
                 const msg = document.getElementById('auth-msg');
@@ -632,6 +643,7 @@
                 await continueSiteStartup();
             } catch (error) {
                 console.error('Site startup error:', error);
+                document.getElementById('startup-screen')?.classList.add('hidden');
                 document.getElementById('auth-section').classList.remove('hidden');
             }
         });
@@ -644,10 +656,14 @@
             pendingLoginSession = data?.session || pendingLoginSession;
             if (pendingLoginSession?.user) {
                 await initializeSignedInUser(pendingLoginSession.user);
+            } else {
+                document.getElementById('startup-screen')?.classList.add('hidden');
+                document.getElementById('auth-section').classList.remove('hidden');
             }
         }
 
         function showVpnBlock(reason) {
+            document.getElementById('startup-screen')?.classList.add('hidden');
             document.getElementById('auth-section').classList.add('hidden');
             document.getElementById('app-section').classList.add('hidden');
             document.getElementById('admin-section').classList.add('hidden');
@@ -840,6 +856,7 @@
                 document.getElementById('auth-section').classList.add('hidden');
                 document.getElementById('app-section').classList.add('hidden');
                 document.getElementById('admin-section').classList.add('hidden');
+                document.getElementById('startup-screen')?.classList.add('hidden');
                 document.getElementById('banned-section').classList.remove('hidden');
                 document.getElementById('ban-reason-text').textContent = profile.ban_reason || 'تم إيقاف هذا الحساب لمخالفة شروط الاستخدام.';
                 return;
@@ -850,6 +867,7 @@
 
             document.getElementById('auth-section').classList.add('hidden');
             document.getElementById('app-section').classList.remove('hidden');
+            document.getElementById('startup-screen')?.classList.add('hidden');
 
             await loadTasks();
 
