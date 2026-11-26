@@ -232,11 +232,22 @@
             </section>
         </div>
 
-        <!-- قسم العروض -->
-        <div id="view-offers" class="hidden glass p-5 rounded-2xl text-center space-y-3">
+        <!-- قسم عروض ayeT-Studios المدمج داخل الموقع -->
+        <div id="view-offers" class="hidden glass p-3 sm:p-5 rounded-2xl text-center space-y-3">
             <h3 class="text-base font-bold text-white">🎮 حائط العروض الكبرى</h3>
-            <p class="text-xs text-gray-400">أكمل الألعاب والاستطلاعات لتضاف الأرباح تلقائياً</p>
-            <button onclick="openOfferwall()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-black font-bold py-3 rounded-xl text-sm transition cursor-pointer">افتح عروض ayeT-Studios</button>
+            <p class="text-xs text-gray-400">اختار لعبة أو استطلاع من هنا مباشرة، وستُضاف المكافآت إلى رصيدك بعد تأكيد Ayet.</p>
+            <div class="w-full overflow-hidden rounded-xl border border-gray-700 bg-white" style="height: min(78vh, 900px); min-height: 620px;">
+                <iframe
+                    id="ayet-offerwall-frame"
+                    title="عروض ayeT-Studios"
+                    src="about:blank"
+                    loading="lazy"
+                    referrerpolicy="strict-origin-when-cross-origin"
+                    allow="clipboard-read; clipboard-write"
+                    style="display:block;width:100%;height:100%;border:0;background:#fff;"
+                ></iframe>
+            </div>
+            <p id="ayet-offerwall-message" class="text-xs text-gray-400">سيتم تحميل العروض عند فتح هذه الصفحة.</p>
         </div>
 
         <!-- قسم المهام -->
@@ -739,6 +750,7 @@
             activeBtn.classList.remove('bg-gray-800', 'text-gray-300');
             activeBtn.classList.add('bg-emerald-500', 'text-black');
             if (tab === 'wallet') loadMyWithdrawals();
+            if (tab === 'offers') openOfferwall();
         }
 
         let selectedProfileAvatar = '👤';
@@ -1129,13 +1141,25 @@
         }
 
         function openOfferwall() {
+            const frame = document.getElementById('ayet-offerwall-frame');
+            const message = document.getElementById('ayet-offerwall-message');
+
             if (!currentUser || !currentUser.id) {
-                alert('سجل دخولك أولاً لفتح العروض');
+                if (message) message.textContent = 'سجّل دخولك أولاً لعرض العروض.';
                 return;
             }
 
-            const offerwallUrl = `https://offerwall.ayet.io/offers?adSlot=31664&externalIdentifier=${encodeURIComponent(currentUser.id)}`;
-            window.open(offerwallUrl, '_blank', 'noopener,noreferrer');
+            if (!frame) return;
+
+            const userId = encodeURIComponent(currentUser.id);
+            const offerwallUrl = `https://offerwall.ayet.io/offers?adSlot=31664&externalIdentifier=${userId}`;
+
+            // حمّل الحائط عند فتح تبويب العروض، ولا تعِد تحميله مع كل تحديث للواجهة.
+            if (frame.dataset.loadedFor !== currentUser.id) {
+                frame.src = offerwallUrl;
+                frame.dataset.loadedFor = currentUser.id;
+                if (message) message.textContent = 'جاري تحميل عروض الألعاب والاستطلاعات...';
+            }
         }
 
         function copyToClipboard(text) {
