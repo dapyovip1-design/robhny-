@@ -141,6 +141,12 @@
                 <button type="submit" id="withdraw-btn" class="w-full bg-emerald-500 hover:bg-emerald-600 text-black font-bold py-3 rounded-xl text-xs transition cursor-pointer">إرسال طلب السحب</button>
                 <p id="withdraw-msg" class="text-center text-xs mt-1"></p>
             </form>
+            <div class="border-t border-gray-700 pt-4 space-y-2">
+                <h4 class="text-xs font-bold text-white">📋 طلبات السحب الخاصة بي</h4>
+                <div id="my-withdrawals-list" class="space-y-2">
+                    <p class="text-xs text-gray-400 text-center">جاري تحميل الطلبات...</p>
+                </div>
+            </div>
         </div>
 
         <footer class="text-center text-[11px] text-gray-500 pt-4">
@@ -526,6 +532,7 @@
             const activeBtn = document.getElementById('tab-' + tab);
             activeBtn.classList.remove('bg-gray-800', 'text-gray-300');
             activeBtn.classList.add('bg-emerald-500', 'text-black');
+            if (tab === 'wallet') loadMyWithdrawals();
         }
 
         async function loadTasks() {
@@ -620,52 +627,113 @@
             e.preventDefault();
             const wallet = document.getElementById('withdraw-wallet').value.trim();
             const note = document.getElementById('withdraw-note').value.trim();
-            const amount = parseInt(document.getElementById('withdraw-amount').value);
+            const amount = Number(document.getElementById('withdraw-amount').value);
             const msg = document.getElementById('withdraw-msg');
             const btn = document.getElementById('withdraw-btn');
 
-            if (isNaN(amount) || amount < siteSettings.min_withdraw) {
+            if (!wallet) {
+                msg.className = 'text-center text-xs text-red-400 mt-1';
+                msg.textContent = '❌ اكتب رقم المحفظة أولاً.';
+                return;
+            }
+            if (!Number.isInteger(amount) || amount < Number(siteSettings.min_withdraw)) {
                 msg.className = 'text-center text-xs text-red-400 mt-1';
                 msg.textContent = `❌ الحد الأدنى للسحب هو ${siteSettings.min_withdraw} نقطة!`;
                 return;
             }
-
-            if (amount > siteSettings.max_withdraw) {
+            if (amount > Number(siteSettings.max_withdraw)) {
                 msg.className = 'text-center text-xs text-red-400 mt-1';
                 msg.textContent = `❌ الحد الأقصى للسحب هو ${siteSettings.max_withdraw} نقطة!`;
                 return;
             }
-
             if (amount > currentBalance) {
                 msg.className = 'text-center text-xs text-red-400 mt-1';
-                msg.textContent = `❌ رصيدك الحالي غير كافٍ!`;
+                msg.textContent = '❌ رصيدك الحالي غير كافٍ!';
                 return;
             }
 
             btn.disabled = true;
-            btn.textContent = 'جاري الإرسال...';
+            btn.textContent = 'جاري إرسال الطلب...';
+            msg.textContent = '';
 
-            const newBalance = currentBalance - amount;
-            await supabaseClient.rpc('admin_adjust_balance', { target_user_id: currentUser.id, points_change: -amount, reason_text: `طلب سحب أرباح بقيمة ${amount} نقطة.` });
-
-            const fullWalletInfo = note ? `${wallet} - ملاحظة: ${note}` : wallet;
-
+            // لا يتم خصم الرصيد عند تقديم الطلب؛ الخصم يتم بعد موافقة الأدمن فقط.
+            const walletAddress = note ? `${wallet} - ${note}` : wallet;
             const { error } = await supabaseClient
                 .from('withdrawals')
-                .insert([{ user_id: currentUser.id, email: currentUser.email, wallet_info: fullWalletInfo, amount: amount, status: 'pending' }]);
+                .insert([{
+                    user_id: currentUser.id,
+                    amount: amount,
+                    method: 'Vodafone Cash / InstaPay',
+                    wallet_address: walletAddress,
+                    status: 'pending',
+                    balance_deducted: false
+                }]);
 
-            if (!error) {
-                currentBalance = newBalance;
-                updateBalanceUI();
+            if (error) {
+                msg.className = 'text-center text-xs text-red-400 mt-1';
+                msg.textContent = '❌ تعذر إرسال الطلب: ' + error.message;
+            } else {
                 msg.className = 'text-center text-xs text-emerald-400 mt-1 font-bold';
-                msg.textContent = '✅ تم إرسال طلب السحب بنجاح!';
+                msg.textContent = '✅ تم إرسال طلبك. رصيدك لم يُخصم، والطلب الآن قيد المراجعة.';
                 document.getElementById('withdraw-wallet').value = '';
                 document.getElementById('withdraw-note').value = '';
                 document.getElementById('withdraw-amount').value = '';
-                if (currentUser.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) loadAdminData();
+                await loadMyWithdrawals();
+                if (currentUser.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) await loadAdminData();
             }
+
             btn.disabled = false;
             btn.textContent = 'إرسال طلب السحب';
+        }
+
+        async function loadMyWithdrawals() {
+            if (!currentUser) return;
+            const list = document.getElementById('my-withdrawals-list');
+            if (!list) return;
+            const { data, error } = await supabaseClient
+                .from('withdrawals')
+                .select('id, amount, method, wallet_address, status, created_at')
+                .eq('user_id', currentUser.id)
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                list.innerHTML = `<p class="text-xs text-red-400">تعذر تحميل الطلبات: ${error.message}</p>`;
+                return;
+            }
+            if (!data || data.length === 0) {
+                list.innerHTML = '<p class="text-xs text-gray-400 text-center">لا توجد طلبات سحب حتى الآن.</p>';
+                return;
+            }
+            const statusInfo = {
+                pending: ['قيد المراجعة', 'text-amber-300 bg-amber-500/15'],
+                approved: ['تمت الموافقة', 'text-emerald-300 bg-emerald-500/15'],
+                rejected: ['مرفوض', 'text-red-300 bg-red-500/15']
+            };
+            list.innerHTML = data.map(w => {
+                const st = statusInfo[w.status] || [w.status, 'text-gray-300 bg-gray-700'];
+                const date = w.created_at ? new Date(w.created_at).toLocaleString('ar-EG') : '';
+                return `<div class="bg-gray-900 p-3 rounded-xl border border-gray-800 space-y-1">
+                    <div class="flex justify-between items-center gap-2"><b class="text-xs text-white">${Number(w.amount)} نقطة</b><span class="text-[10px] px-2 py-1 rounded-lg ${st[1]}">${st[0]}</span></div>
+                    <p class="text-[10px] text-gray-400 break-words">${w.method || 'محفظة'}: ${w.wallet_address || ''}</p>
+                    <p class="text-[10px] text-gray-500">${date}</p>
+                </div>`;
+            }).join('');
+        }
+
+        async function reviewWithdrawal(withdrawalId, decision) {
+            const label = decision === 'approved' ? 'الموافقة على طلب السحب؟ سيتم خصم النقاط.' : 'رفض الطلب؟ سيتم إرجاع النقاط إذا كانت قد خُصمت سابقاً.';
+            if (!confirm(label)) return;
+            const { data, error } = await supabaseClient.rpc('admin_review_withdrawal', {
+                p_withdrawal_id: withdrawalId,
+                p_decision: decision
+            });
+            if (error) {
+                alert('تعذر مراجعة الطلب: ' + error.message);
+                return;
+            }
+            alert(decision === 'approved' ? 'تمت الموافقة. تذكّر تحويل المبلغ يدوياً للمستخدم.' : 'تم رفض الطلب ومعالجة الرصيد.');
+            await loadAdminData();
+            await loadMyWithdrawals();
         }
 
         function openOfferwall() {
@@ -769,17 +837,26 @@
             }
 
             const wList = document.getElementById('admin-withdrawals-list');
-            const { data: withdrawals } = await supabaseClient.from('withdrawals').select('*').order('created_at', { ascending: false });
-            if (withdrawals && withdrawals.length > 0) {
+            const { data: withdrawals, error: withdrawalsError } = await supabaseClient
+                .from('withdrawals').select('id, user_id, amount, method, wallet_address, status, created_at, balance_deducted')
+                .order('created_at', { ascending: false });
+            if (withdrawalsError) {
+                wList.innerHTML = `<p class="text-xs text-red-400">تعذر تحميل طلبات السحب: ${withdrawalsError.message}</p>`;
+            } else if (withdrawals && withdrawals.length > 0) {
                 wList.innerHTML = '';
                 withdrawals.forEach(w => {
+                    const pending = w.status === 'pending';
+                    const statusLabel = w.status === 'pending' ? 'قيد المراجعة' : (w.status === 'approved' ? 'تمت الموافقة' : (w.status === 'rejected' ? 'مرفوض' : w.status));
+                    const safeId = String(w.id).replace(/[^a-f0-9-]/gi, '');
                     wList.innerHTML += `
-                        <div class="bg-gray-900 p-3 rounded-xl border border-gray-800 flex justify-between items-center">
-                            <div>
-                                <p class="text-[11px] font-bold text-white">${w.wallet_info}</p>
-                                <p class="text-[10px] text-gray-400">${w.email} • <span class="text-amber-400 font-bold">${w.amount} نقطة</span></p>
+                        <div class="bg-gray-900 p-3 rounded-xl border border-gray-800 flex flex-col gap-2">
+                            <div class="flex justify-between items-center gap-2">
+                                <span class="text-[11px] font-bold text-white break-all">${w.wallet_address || 'بدون رقم محفظة'}</span>
+                                <span class="text-[10px] px-2 py-1 rounded-lg ${pending ? 'bg-amber-500/20 text-amber-300' : (w.status === 'approved' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-red-500/20 text-red-300')}">${statusLabel}</span>
                             </div>
-                            <span class="text-[10px] px-2 py-1 rounded-lg bg-amber-500/20 text-amber-300">${w.status}</span>
+                            <p class="text-[10px] text-gray-400 break-all">${w.method || 'محفظة'} • المستخدم: ${w.user_id}</p>
+                            <p class="text-[11px] text-amber-400 font-bold">${Number(w.amount)} نقطة</p>
+                            ${pending ? `<div class="flex gap-2"><button onclick="reviewWithdrawal('${safeId}', 'approved')" class="flex-1 bg-emerald-500 text-black text-[10px] font-bold py-2 rounded-lg">✅ موافقة وخصم</button><button onclick="reviewWithdrawal('${safeId}', 'rejected')" class="flex-1 bg-red-500/20 text-red-300 text-[10px] font-bold py-2 rounded-lg">❌ رفض</button></div>` : ''}
                         </div>
                     `;
                 });
