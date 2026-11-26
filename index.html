@@ -577,24 +577,73 @@
 
         let pendingLoginSession = null;
         let vpnGatePassed = false;
+        let authInitPromise = null;
+        let initializedUserId = null;
 
-        window.onload = async () => {
-            const { data: { session } } = await supabaseClient.auth.getSession();
-            pendingLoginSession = session;
-            const check = await performEntryVpnCheck();
-            if (check.blocked) {
-                showVpnBlock(check.reason);
-                return;
+        // تابع واحد لتهيئة الحساب؛ يمنع التهيئة المكررة عند وصول أكثر من حدث مصادقة.
+        async function initializeSignedInUser(user) {
+            if (!user || !vpnGatePassed) return;
+            if (initializedUserId === user.id && currentUser?.id === user.id) return;
+            if (authInitPromise) return authInitPromise;
+            authInitPromise = (async () => {
+                await initUser(user);
+                initializedUserId = user.id;
+            })();
+            try {
+                await authInitPromise;
+            } catch (error) {
+                console.error('User startup failed:', error);
+                document.getElementById('auth-section').classList.remove('hidden');
+                document.getElementById('app-section').classList.add('hidden');
+                const msg = document.getElementById('auth-msg');
+                if (msg) msg.textContent = 'تعذر استعادة الحساب. تحقق من اتصال الإنترنت ثم أعد المحاولة.';
+            } finally {
+                authInitPromise = null;
             }
-            vpnGatePassed = true;
-            await continueSiteStartup();
-        };
+        }
+
+        // متابعة الجلسة عند فتح الموقع، تسجيل الدخول، وتجديد رمز الجلسة.
+        // نستخدم setTimeout حتى لا ننفذ طلبات Supabase داخل callback المصادقة نفسه.
+        supabaseClient.auth.onAuthStateChange((event, session) => {
+            pendingLoginSession = session;
+            if (session?.user && ['INITIAL_SESSION', 'SIGNED_IN', 'TOKEN_REFRESHED', 'USER_UPDATED'].includes(event)) {
+                setTimeout(() => initializeSignedInUser(session.user), 0);
+            }
+            if (event === 'SIGNED_OUT') {
+                currentUser = null;
+                initializedUserId = null;
+                document.getElementById('app-section').classList.add('hidden');
+                document.getElementById('admin-section').classList.add('hidden');
+                document.getElementById('auth-section').classList.remove('hidden');
+            }
+        });
+
+        window.addEventListener('load', async () => {
+            try {
+                const { data, error } = await supabaseClient.auth.getSession();
+                if (error) console.warn('Session restore warning:', error);
+                pendingLoginSession = data?.session || pendingLoginSession;
+                const check = await performEntryVpnCheck();
+                if (check.blocked) {
+                    showVpnBlock(check.reason);
+                    return;
+                }
+                vpnGatePassed = true;
+                await continueSiteStartup();
+            } catch (error) {
+                console.error('Site startup error:', error);
+                document.getElementById('auth-section').classList.remove('hidden');
+            }
+        });
 
         async function continueSiteStartup() {
             document.getElementById('vpn-block-screen').classList.add('hidden');
             await fetchSettings();
-            if (pendingLoginSession) {
-                await initUser(pendingLoginSession.user);
+            const { data, error } = await supabaseClient.auth.getSession();
+            if (error) console.warn('Could not restore auth session:', error);
+            pendingLoginSession = data?.session || pendingLoginSession;
+            if (pendingLoginSession?.user) {
+                await initializeSignedInUser(pendingLoginSession.user);
             }
         }
 
@@ -750,8 +799,11 @@
 
             if (res.error) {
                 msg.textContent = 'خطأ: ' + res.error.message;
-            } else if (res.data.user) {
-                await initUser(res.data.user);
+            } else if (res.data.session?.user) {
+                pendingLoginSession = res.data.session;
+                await initializeSignedInUser(res.data.session.user);
+            } else if (type === 'signup' && res.data.user) {
+                msg.textContent = 'تم إنشاء الحساب. تحقق من بريدك الإلكتروني لتأكيد التسجيل ثم سجّل الدخول.';
             }
         }
 
