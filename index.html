@@ -323,9 +323,28 @@
         }
 
         async function openNotificationsModal() {
-            document.getElementById('notifications-modal').classList.remove('hidden');
-            document.getElementById('notif-badge').classList.add('hidden');
+            const modal = document.getElementById('notifications-modal');
+            const badge = document.getElementById('notif-badge');
+
+            modal.classList.remove('hidden');
+
+            // عرض الإشعارات أولاً
             await fetchUserNotifications();
+
+            // تعليم إشعارات المستخدم الحالية كمقروءة حتى لا تعود كتنبيهات جديدة بعد التحديث
+            if (currentUser) {
+                const { error } = await supabaseClient
+                    .from('notifications')
+                    .update({ is_read: true })
+                    .eq('user_id', currentUser.id)
+                    .eq('is_read', false);
+
+                if (error) {
+                    console.error('Mark notifications as read error:', error);
+                } else {
+                    badge.classList.add('hidden');
+                }
+            }
         }
 
         function closeNotificationsModal() {
@@ -350,40 +369,22 @@
         }
 
         async function fetchUserNotifications() {
-            const notifList = document.getElementById('notifications-list');
-
-            if (!currentUser) {
-                notifList.textContent = 'يرجى تسجيل الدخول لعرض الإشعارات.';
-                return;
-            }
-
-            notifList.textContent = 'جاري تحميل الإشعارات...';
-
-            const { data: notifs, error } = await supabaseClient
+            if (!currentUser) return;
+            const { data: notifs } = await supabaseClient
                 .from('notifications')
-                .select('id, message, created_at, is_read')
+                .select('*')
                 .eq('user_id', currentUser.id)
                 .order('created_at', { ascending: false });
 
-            if (error) {
-                console.error('Notifications error:', error);
-                notifList.textContent = 'تعذر تحميل الإشعارات: ' + error.message;
-                return;
+            const notifList = document.getElementById('notifications-list');
+            if (notifs && notifs.length > 0) {
+                notifList.innerHTML = '';
+                notifs.forEach(n => {
+                    notifList.innerHTML += `<div class="bg-gray-900 p-2.5 rounded-xl border border-gray-800 text-xs text-gray-200">${n.message}</div>`;
+                });
+            } else {
+                notifList.innerHTML = '<p class="text-xs text-gray-400 text-center py-4">لا توجد إشعارات جديدة</p>';
             }
-
-            notifList.innerHTML = '';
-
-            if (!notifs || notifs.length === 0) {
-                notifList.textContent = 'لا توجد إشعارات جديدة';
-                return;
-            }
-
-            notifs.forEach(n => {
-                const item = document.createElement('div');
-                item.className = 'bg-gray-900 p-2.5 rounded-xl border border-gray-800 text-xs text-gray-200';
-                item.textContent = n.message;
-                notifList.appendChild(item);
-            });
         }
 
         async function handleAuth(type) {
