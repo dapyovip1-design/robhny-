@@ -375,22 +375,47 @@
             </a>
         </div>
 
-        <!-- قسم عروض ayeT-Studios المدمج داخل الموقع -->
+        <!-- صفحة العروض: ayeT + تجربة TimeWall -->
         <div id="view-offers" class="hidden glass p-3 sm:p-5 rounded-2xl text-center space-y-3">
             <h3 class="text-base font-bold text-white">🎮 حائط العروض الكبرى</h3>
-            <p class="text-xs text-gray-400">اختار لعبة أو استطلاع من هنا مباشرة، وستُضاف المكافآت إلى رصيدك بعد تأكيد Ayet.</p>
-            <div class="w-full overflow-hidden rounded-xl border border-gray-700 bg-white" style="height: min(78vh, 900px); min-height: 620px;">
-                <iframe
-                    id="ayet-offerwall-frame"
-                    title="عروض ayeT-Studios"
-                    src="about:blank"
-                    loading="lazy"
-                    referrerpolicy="strict-origin-when-cross-origin"
-                    allow="clipboard-read; clipboard-write"
-                    style="display:block;width:100%;height:100%;border:0;background:#fff;"
-                ></iframe>
+            <div class="grid grid-cols-2 gap-2">
+                <button id="offers-provider-ayet" type="button" onclick="switchOfferProvider('ayet')" class="py-3 rounded-xl bg-emerald-500 text-black text-xs font-black">ayeT Studios</button>
+                <button id="offers-provider-timewall" type="button" onclick="switchOfferProvider('timewall')" class="py-3 rounded-xl bg-gray-800 text-gray-200 border border-gray-700 text-xs font-black">TimeWall (تجربة)</button>
             </div>
-            <p id="ayet-offerwall-message" class="text-xs text-gray-400">سيتم تحميل العروض عند فتح هذه الصفحة.</p>
+            <div id="ayet-offerwall-panel" class="space-y-2">
+                <p class="text-xs text-gray-400">اختار لعبة أو استطلاع من هنا مباشرة، وستُضاف المكافآت إلى رصيدك بعد تأكيد ayeT.</p>
+                <div class="w-full overflow-hidden rounded-xl border border-gray-700 bg-white" style="height: min(78vh, 900px); min-height: 620px;">
+                    <iframe
+                        id="ayet-offerwall-frame"
+                        title="عروض ayeT-Studios"
+                        src="about:blank"
+                        loading="lazy"
+                        referrerpolicy="strict-origin-when-cross-origin"
+                        allow="clipboard-read; clipboard-write"
+                        style="display:block;width:100%;height:100%;border:0;background:#fff;"
+                    ></iframe>
+                </div>
+                <p id="ayet-offerwall-message" class="text-xs text-gray-400">سيتم تحميل عروض ayeT عند فتح هذه الصفحة.</p>
+            </div>
+            <div id="timewall-offerwall-panel" class="hidden space-y-2">
+                <div class="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-right">
+                    <p class="text-xs font-bold text-amber-300">⚠️ وضع تجريبي</p>
+                    <p class="text-[11px] leading-6 text-gray-300">نجرب فتح TimeWall وعرض المهام فقط. لم يتم بعد ربط معرّف كل مستخدم أو تحويل مكافآته إلى رصيد ربحني، لذلك لا تعتمد على أي أرباح تظهر هنا قبل إكمال اختبار التتبع والـ Postback.</p>
+                </div>
+                <div class="w-full overflow-hidden rounded-xl border border-gray-700 bg-white" style="height: min(78vh, 900px); min-height: 620px;">
+                    <iframe
+                        id="timewall-offerwall-frame"
+                        title="TimeWall - تجربة"
+                        src="about:blank"
+                        loading="lazy"
+                        referrerpolicy="strict-origin-when-cross-origin"
+                        allow="clipboard-read; clipboard-write"
+                        style="display:block;width:100%;height:100%;border:0;background:#fff;"
+                    ></iframe>
+                </div>
+                <p id="timewall-offerwall-message" class="text-xs text-gray-400">اضغط لفتح TimeWall التجريبي.</p>
+                <a href="https://myrewardstation.com/w/25cbdfadc309" target="_blank" rel="noopener noreferrer" class="block w-full rounded-xl bg-amber-400 hover:bg-amber-300 text-black font-black py-3 text-sm">فتح TimeWall في صفحة مستقلة ↗</a>
+            </div>
         </div>
 
         <!-- قسم المهام -->
@@ -1522,6 +1547,35 @@
             await loadMyWithdrawals();
         }
 
+        const TIMEWALL_TEST_URL = 'https://myrewardstation.com/w/25cbdfadc309';
+
+        function switchOfferProvider(provider) {
+            const ayetPanel = document.getElementById('ayet-offerwall-panel');
+            const timewallPanel = document.getElementById('timewall-offerwall-panel');
+            const ayetButton = document.getElementById('offers-provider-ayet');
+            const timewallButton = document.getElementById('offers-provider-timewall');
+            const showAyet = provider !== 'timewall';
+
+            ayetPanel.classList.toggle('hidden', !showAyet);
+            timewallPanel.classList.toggle('hidden', showAyet);
+            ayetButton.className = showAyet
+                ? 'py-3 rounded-xl bg-emerald-500 text-black text-xs font-black'
+                : 'py-3 rounded-xl bg-gray-800 text-gray-200 border border-gray-700 text-xs font-black';
+            timewallButton.className = !showAyet
+                ? 'py-3 rounded-xl bg-amber-400 text-black text-xs font-black'
+                : 'py-3 rounded-xl bg-gray-800 text-gray-200 border border-gray-700 text-xs font-black';
+
+            if (!showAyet) {
+                const frame = document.getElementById('timewall-offerwall-frame');
+                const message = document.getElementById('timewall-offerwall-message');
+                if (frame && frame.dataset.loaded !== 'true') {
+                    frame.src = TIMEWALL_TEST_URL;
+                    frame.dataset.loaded = 'true';
+                    if (message) message.textContent = 'جاري محاولة تحميل TimeWall... لو لم يظهر داخل الإطار استخدم زر الفتح في صفحة مستقلة.';
+                }
+            }
+        }
+
         function openOfferwall() {
             const frame = document.getElementById('ayet-offerwall-frame');
             const message = document.getElementById('ayet-offerwall-message');
@@ -1536,7 +1590,7 @@
             const userId = encodeURIComponent(currentUser.id);
             const offerwallUrl = `https://offerwall.ayet.io/offers?adSlot=31688&externalIdentifier=${userId}`;
 
-            // حمّل الحائط عند فتح تبويب العروض، ولا تعِد تحميله مع كل تحديث للواجهة.
+            // حمّل حائط ayeT عند فتح تبويب العروض، ولا تعِد تحميله مع كل تحديث للواجهة.
             if (frame.dataset.loadedFor !== currentUser.id) {
                 frame.src = offerwallUrl;
                 frame.dataset.loadedFor = currentUser.id;
