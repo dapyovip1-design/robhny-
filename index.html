@@ -144,6 +144,7 @@
                 </button>
 
                 <span id="user-balance" class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-3 py-1.5 rounded-xl text-xs font-bold">0 نقطة</span>
+                <button type="button" onclick="openLeaderboard()" class="bg-yellow-500/15 border border-yellow-500/30 text-yellow-300 px-3 py-2 rounded-xl text-xs font-black">🏆 أوائل المتسابقين</button>
             </div>
             
             <h1 class="text-xl font-black text-emerald-400">⚡ ربحني</h1>
@@ -158,7 +159,19 @@
             <div class="grid grid-cols-3 gap-2">
                 <button onclick="switchTab('wallet')" id="tab-wallet" class="py-2 rounded-xl text-xs font-bold bg-gray-800 text-gray-300 transition cursor-pointer">المحفظة</button>
                 <button onclick="switchTab('tasks')" id="tab-tasks" class="py-2 rounded-xl text-xs font-bold bg-emerald-500 text-black transition cursor-pointer">المهام</button>
-                <button onclick="switchTab('offers')" id="tab-offers" class="py-2 rounded-xl text-xs font-bold bg-gray-800 text-gray-300 transition cursor-pointer">العروض</button>
+            </div>
+        </div>
+
+        <!-- نافذة أوائل المتسابقين -->
+        <div id="leaderboard-modal" class="hidden fixed inset-0 z-[100] bg-black/80 p-4 flex items-center justify-center">
+            <div class="glass w-full max-w-md max-h-[85vh] overflow-y-auto rounded-2xl p-5 space-y-4">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-lg font-black text-yellow-300">🏆 أوائل المتسابقين</h2>
+                    <button type="button" onclick="closeLeaderboard()" class="bg-gray-800 px-3 py-2 rounded-lg text-white">✕</button>
+                </div>
+                <p class="text-xs text-gray-400">الترتيب حسب إجمالي النقاط المكتسبة من المهام المعتمدة منذ تفعيل سجل الأرباح.</p>
+                <div id="leaderboard-list" class="space-y-2"><p class="text-center text-gray-400 text-sm">جاري تحميل الترتيب...</p></div>
+                <p id="leaderboard-updated" class="text-[10px] text-gray-500 text-center"></p>
             </div>
         </div>
 
@@ -373,49 +386,6 @@
                 <svg viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="2"/><circle cx="17.5" cy="6.8" r="1.2" fill="currentColor"/></svg>
                 التحدث مع المطور عبر Instagram
             </a>
-        </div>
-
-        <!-- صفحة العروض: ayeT + تجربة TimeWall -->
-        <div id="view-offers" class="hidden glass p-3 sm:p-5 rounded-2xl text-center space-y-3">
-            <h3 class="text-base font-bold text-white">🎮 حائط العروض الكبرى</h3>
-            <div class="grid grid-cols-2 gap-2">
-                <button id="offers-provider-ayet" type="button" onclick="switchOfferProvider('ayet')" class="py-3 rounded-xl bg-emerald-500 text-black text-xs font-black">ayeT Studios</button>
-                <button id="offers-provider-timewall" type="button" onclick="switchOfferProvider('timewall')" class="py-3 rounded-xl bg-gray-800 text-gray-200 border border-gray-700 text-xs font-black">TimeWall (تجربة)</button>
-            </div>
-            <div id="ayet-offerwall-panel" class="space-y-2">
-                <p class="text-xs text-gray-400">اختار لعبة أو استطلاع من هنا مباشرة، وستُضاف المكافآت إلى رصيدك بعد تأكيد ayeT.</p>
-                <div class="w-full overflow-hidden rounded-xl border border-gray-700 bg-white" style="height: min(78vh, 900px); min-height: 620px;">
-                    <iframe
-                        id="ayet-offerwall-frame"
-                        title="عروض ayeT-Studios"
-                        src="about:blank"
-                        loading="lazy"
-                        referrerpolicy="strict-origin-when-cross-origin"
-                        allow="clipboard-read; clipboard-write"
-                        style="display:block;width:100%;height:100%;border:0;background:#fff;"
-                    ></iframe>
-                </div>
-                <p id="ayet-offerwall-message" class="text-xs text-gray-400">سيتم تحميل عروض ayeT عند فتح هذه الصفحة.</p>
-            </div>
-            <div id="timewall-offerwall-panel" class="hidden space-y-2">
-                <div class="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-right">
-                    <p class="text-xs font-bold text-amber-300">⚠️ وضع تجريبي</p>
-                    <p class="text-[11px] leading-6 text-gray-300">نجرب فتح TimeWall وعرض المهام فقط. لم يتم بعد ربط معرّف كل مستخدم أو تحويل مكافآته إلى رصيد ربحني، لذلك لا تعتمد على أي أرباح تظهر هنا قبل إكمال اختبار التتبع والـ Postback.</p>
-                </div>
-                <div class="w-full overflow-hidden rounded-xl border border-gray-700 bg-white" style="height: min(78vh, 900px); min-height: 620px;">
-                    <iframe
-                        id="timewall-offerwall-frame"
-                        title="TimeWall - تجربة"
-                        src="about:blank"
-                        loading="lazy"
-                        referrerpolicy="strict-origin-when-cross-origin"
-                        allow="clipboard-read; clipboard-write"
-                        style="display:block;width:100%;height:100%;border:0;background:#fff;"
-                    ></iframe>
-                </div>
-                <p id="timewall-offerwall-message" class="text-xs text-gray-400">اضغط لفتح TimeWall التجريبي.</p>
-                <a href="https://myrewardstation.com/w/25cbdfadc309" target="_blank" rel="noopener noreferrer" class="block w-full rounded-xl bg-amber-400 hover:bg-amber-300 text-black font-black py-3 text-sm">فتح TimeWall في صفحة مستقلة ↗</a>
-            </div>
         </div>
 
         <!-- قسم المهام -->
@@ -1106,7 +1076,7 @@
         }
 
         function openSupportPage() {
-            ['wallet', 'tasks', 'offers', 'profile', 'about'].forEach(t => {
+            ['wallet', 'tasks', 'profile', 'about'].forEach(t => {
                 const page = document.getElementById('view-' + t);
                 if (page) page.classList.add('hidden');
             });
@@ -1118,7 +1088,7 @@
         function openAboutPage() {
             const supportPage = document.getElementById('view-support');
             if (supportPage) supportPage.classList.add('hidden');
-            ['wallet', 'tasks', 'offers', 'profile'].forEach(t => {
+            ['wallet', 'tasks', 'profile'].forEach(t => {
                 const page = document.getElementById('view-' + t);
                 if (page) page.classList.add('hidden');
             });
@@ -1129,12 +1099,12 @@
 
         function switchTab(tab) {
             // إخفاء كل الصفحات المنفصلة أولاً حتى لا تظل صفحة الدعم أو عن الموقع ظاهرة أسفل التبويبات.
-            ['wallet', 'tasks', 'offers', 'profile', 'about', 'support'].forEach(t => {
+            ['wallet', 'tasks', 'profile', 'about', 'support'].forEach(t => {
                 const page = document.getElementById('view-' + t);
                 if (page) page.classList.add('hidden');
             });
             document.getElementById('dashboard-navigation').classList.remove('hidden');
-            ['wallet', 'tasks', 'offers'].forEach(t => {
+            ['wallet', 'tasks'].forEach(t => {
                 const btn = document.getElementById('tab-' + t);
                 btn.classList.remove('bg-emerald-500', 'text-black');
                 btn.classList.add('bg-gray-800', 'text-gray-300');
@@ -1145,14 +1115,13 @@
             activeBtn.classList.remove('bg-gray-800', 'text-gray-300');
             activeBtn.classList.add('bg-emerald-500', 'text-black');
             if (tab === 'wallet') loadMyWithdrawals();
-            if (tab === 'offers') openOfferwall();
         }
 
         let selectedProfileAvatar = '👤';
 
         async function openProfile() {
             if (!currentUser) return;
-            ['wallet', 'tasks', 'offers', 'about', 'support'].forEach(t => {
+            ['wallet', 'tasks', 'about', 'support'].forEach(t => {
                 const page = document.getElementById('view-' + t);
                 if (page) page.classList.add('hidden');
             });
@@ -1547,57 +1516,6 @@
             await loadMyWithdrawals();
         }
 
-        const TIMEWALL_TEST_URL = 'https://myrewardstation.com/w/25cbdfadc309';
-
-        function switchOfferProvider(provider) {
-            const ayetPanel = document.getElementById('ayet-offerwall-panel');
-            const timewallPanel = document.getElementById('timewall-offerwall-panel');
-            const ayetButton = document.getElementById('offers-provider-ayet');
-            const timewallButton = document.getElementById('offers-provider-timewall');
-            const showAyet = provider !== 'timewall';
-
-            ayetPanel.classList.toggle('hidden', !showAyet);
-            timewallPanel.classList.toggle('hidden', showAyet);
-            ayetButton.className = showAyet
-                ? 'py-3 rounded-xl bg-emerald-500 text-black text-xs font-black'
-                : 'py-3 rounded-xl bg-gray-800 text-gray-200 border border-gray-700 text-xs font-black';
-            timewallButton.className = !showAyet
-                ? 'py-3 rounded-xl bg-amber-400 text-black text-xs font-black'
-                : 'py-3 rounded-xl bg-gray-800 text-gray-200 border border-gray-700 text-xs font-black';
-
-            if (!showAyet) {
-                const frame = document.getElementById('timewall-offerwall-frame');
-                const message = document.getElementById('timewall-offerwall-message');
-                if (frame && frame.dataset.loaded !== 'true') {
-                    frame.src = TIMEWALL_TEST_URL;
-                    frame.dataset.loaded = 'true';
-                    if (message) message.textContent = 'جاري محاولة تحميل TimeWall... لو لم يظهر داخل الإطار استخدم زر الفتح في صفحة مستقلة.';
-                }
-            }
-        }
-
-        function openOfferwall() {
-            const frame = document.getElementById('ayet-offerwall-frame');
-            const message = document.getElementById('ayet-offerwall-message');
-
-            if (!currentUser || !currentUser.id) {
-                if (message) message.textContent = 'سجّل دخولك أولاً لعرض العروض.';
-                return;
-            }
-
-            if (!frame) return;
-
-            const userId = encodeURIComponent(currentUser.id);
-            const offerwallUrl = `https://offerwall.ayet.io/offers?adSlot=31688&externalIdentifier=${userId}`;
-
-            // حمّل حائط ayeT عند فتح تبويب العروض، ولا تعِد تحميله مع كل تحديث للواجهة.
-            if (frame.dataset.loadedFor !== currentUser.id) {
-                frame.src = offerwallUrl;
-                frame.dataset.loadedFor = currentUser.id;
-                if (message) message.textContent = 'جاري تحميل عروض الألعاب والاستطلاعات...';
-            }
-        }
-
         function copyToClipboard(text) {
             navigator.clipboard.writeText(text).then(() => {
                 alert('📋 تم النسخ بنجاح: ' + text);
@@ -1820,28 +1738,52 @@
         }
 
         async function approveSubmission(subId, userId, taskId) {
-            const { data: taskData } = await supabaseClient.from('site_tasks').select('reward, title').eq('id', taskId).single();
-            if (!taskData) {
-                alert('المهمة غير موجودة!');
-                return;
-            }
-            const reward = taskData.reward;
-
-            const { error: rpcErr } = await supabaseClient.rpc('admin_adjust_balance', {
-                target_user_id: userId,
-                points_change: reward,
-                reason_text: `🎉 مبروك! تمت الموافقة على مهمتك (${taskData.title}) وأُضيف لرصيدك ${reward} نقطة.`
+            const { data, error } = await supabaseClient.rpc('approve_task_submission', {
+                p_submission_id: subId
             });
-
-            if (rpcErr) {
-                alert('خطأ أثناء إضافة النقاط: ' + rpcErr.message);
+            if (error) {
+                alert('تعذر اعتماد المهمة: ' + error.message);
                 return;
             }
-
-            await supabaseClient.from('task_submissions').update({ status: 'approved' }).eq('id', subId);
-
-            alert(`✅ تم قبول الإثبات وإضافة ${reward} نقطة لرصيد المستخدم بنجاح!`);
+            alert('✅ تمت الموافقة وإضافة ' + (data?.reward ?? '') + ' نقطة وتسجيل الأرباح.');
             await loadAdminData();
+        }
+
+        function escapeLeaderboardText(value) { const el = document.createElement('span'); el.textContent = String(value ?? ''); return el.innerHTML; }
+        let leaderboardRefreshTimer = null;
+        async function loadLeaderboard() {
+            const list = document.getElementById('leaderboard-list');
+            if (!list) return;
+            const { data, error } = await supabaseClient.rpc('get_earnings_leaderboard');
+            if (error) {
+                list.innerHTML = '<p class="text-center text-red-300 text-sm">تعذر تحميل الترتيب. تأكد من تنفيذ تحديث قاعدة البيانات.</p>';
+                return;
+            }
+            if (!data || !data.length) {
+                list.innerHTML = '<p class="text-center text-gray-400 text-sm py-5">لا توجد أرباح مسجلة حتى الآن.</p>';
+                return;
+            }
+            const medals = ['👑', '🥉', '🥈'];
+            list.innerHTML = data.map((row, index) => `
+                <div class="flex items-center justify-between gap-3 rounded-xl border border-gray-700 bg-gray-900/70 p-3">
+                    <div class="flex items-center gap-3 min-w-0">
+                        <span class="text-xl">${medals[index] || (index + 1) + '.'}</span>
+                        <span class="text-sm font-bold text-white truncate">${escapeLeaderboardText(row.username || 'مستخدم')}</span>
+                    </div>
+                    <span class="text-sm font-black text-emerald-300 whitespace-nowrap">${Number(row.total_earned || 0).toLocaleString('ar-EG')} نقطة</span>
+                </div>`).join('');
+            document.getElementById('leaderboard-updated').textContent = 'يتم تحديث القائمة تلقائيًا كل 15 ثانية';
+        }
+        function openLeaderboard() {
+            document.getElementById('leaderboard-modal').classList.remove('hidden');
+            loadLeaderboard();
+            if (leaderboardRefreshTimer) clearInterval(leaderboardRefreshTimer);
+            leaderboardRefreshTimer = setInterval(loadLeaderboard, 15000);
+        }
+        function closeLeaderboard() {
+            document.getElementById('leaderboard-modal').classList.add('hidden');
+            if (leaderboardRefreshTimer) clearInterval(leaderboardRefreshTimer);
+            leaderboardRefreshTimer = null;
         }
 
         async function rejectSubmission(subId, taskId) {
