@@ -1368,6 +1368,8 @@
             contestLoadBusy = true;
             const host = document.getElementById('contests-list');
             try {
+                const expandedContestIds = Array.from(host.querySelectorAll('[id^="contest-ranking-"]:not(.hidden)'))
+                    .map(panel => Number(panel.id.replace('contest-ranking-', ''))).filter(Number.isSafeInteger);
                 const { data, error } = await supabaseClient.rpc('get_public_contests');
                 if (error) throw error;
                 const contests = Array.isArray(data) ? data : (data || []);
@@ -1378,12 +1380,26 @@
                 host.innerHTML = contests.map(c => {
                     const now = Date.now(), start = new Date(c.starts_at).getTime(), end = new Date(c.ends_at).getTime();
                     const joined = c.joined === true;
+                    const isReferralContest = Number(c.id) === 2 || String(c.title || '').trim() === 'ملوك الدعوات';
                     const state = now < start ? 'لم تبدأ بعد' : now > end ? 'انتهت' : 'مفتوحة للانضمام';
                     const stateClass = now >= start && now <= end ? 'text-emerald-300' : 'text-amber-300';
                     const canJoin = !joined && now >= start && now <= end;
                     return `<article class="bg-gray-900/80 border border-gray-700 rounded-2xl p-4 space-y-3">
                         <div class="flex items-start justify-between gap-2"><h3 class="text-sm font-black text-white">${contestEscape(c.title)}</h3><span class="text-[10px] ${stateClass} font-bold shrink-0">${state}</span></div>
                         <p class="text-xs text-gray-300 leading-7 whitespace-pre-wrap">${contestEscape(c.description)}</p>
+                        ${isReferralContest ? `<div class="rounded-xl border border-sky-500/30 bg-sky-950/30 p-3 space-y-2">
+                            <p class="text-xs font-black text-sky-200">🎯 شروط مسابقة ملوك الدعوات</p>
+                            <p class="text-xs text-gray-200 leading-7">ادعُ أصحابك من خلال رابط دعوتك الخاص. لا تُحسب الدعوة إلا إذا سجّل الشخص من رابطك وأكمل 5 مهمات مختلفة مقبولة (approved). المحاولات المكررة أو المهمات المرفوضة لا تُحتسب.</p>
+                            <p class="text-[11px] font-bold text-yellow-200">🏆 جوائز أول 5 مراكز</p>
+                            <div class="grid grid-cols-5 gap-1 text-center text-[10px]">
+                                <div class="rounded-lg bg-gray-950 p-2"><b class="block text-yellow-300">الأول</b><span>500 نقطة</span></div>
+                                <div class="rounded-lg bg-gray-950 p-2"><b class="block text-gray-200">الثاني</b><span>300 نقطة</span></div>
+                                <div class="rounded-lg bg-gray-950 p-2"><b class="block text-amber-500">الثالث</b><span>200 نقطة</span></div>
+                                <div class="rounded-lg bg-gray-950 p-2"><b class="block text-sky-200">الرابع</b><span>100 نقطة</span></div>
+                                <div class="rounded-lg bg-gray-950 p-2"><b class="block text-emerald-200">الخامس</b><span>50 نقطة</span></div>
+                            </div>
+                            <p class="text-[10px] text-gray-400">مدة المسابقة شهر، ويُحدَّث ترتيب الدعوات تلقائيًا أثناء فتح صفحة المسابقات.</p>
+                        </div>` : ''}
                         <div class="grid grid-cols-2 gap-2 text-[10px] text-gray-400">
                             <div class="bg-gray-950 rounded-lg p-2">البداية<br><span class="text-white">${contestDateLabel(c.starts_at)}</span></div>
                             <div class="bg-gray-950 rounded-lg p-2">النهاية<br><span class="text-white">${contestDateLabel(c.ends_at)}</span></div>
@@ -1393,11 +1409,15 @@
                             ${joined ? '<span class="text-xs text-emerald-300 font-bold">✓ أنت مشترك</span>' : canJoin ? `<button onclick="joinContest(${Number(c.id)})" class="bg-emerald-500 text-black font-black text-xs px-4 py-2 rounded-xl">انضم للمسابقة</button>` : '<span class="text-[10px] text-gray-500">الانضمام غير متاح الآن</span>'}
                         </div>
                         <div class="border-t border-gray-700 pt-3">
-                            <button type="button" onclick="toggleContestRanking(${Number(c.id)})" class="text-xs text-yellow-300 font-bold">عرض المشاركين والترتيب ▾</button>
+                            <button type="button" onclick="toggleContestRanking(${Number(c.id)})" class="text-xs text-yellow-300 font-bold">${isReferralContest ? 'عرض ترتيب الدعوات الناجحة ▾' : 'عرض المشاركين والترتيب ▾'}</button>
                             <div id="contest-ranking-${Number(c.id)}" class="hidden mt-3 space-y-2"><p class="text-xs text-gray-500">اضغط لعرض الترتيب.</p></div>
                         </div>
                     </article>`;
                 }).join('');
+                await Promise.all(expandedContestIds.map(async id => {
+                    const panel = document.getElementById('contest-ranking-' + id);
+                    if (panel) { panel.classList.remove('hidden'); await renderContestRanking(id, panel); }
+                }));
             } catch (error) {
                 console.error('Load contests error:', error);
                 if (!silent) host.innerHTML = '<p class="text-xs text-amber-300 text-center">تعذر تحميل المسابقات. تأكد من تنفيذ كود إعداد المسابقات في Supabase.</p>';
@@ -1419,15 +1439,24 @@
             if (!panel) return;
             if (!panel.classList.contains('hidden')) { panel.classList.add('hidden'); return; }
             panel.classList.remove('hidden');
+            await renderContestRanking(contestId, panel);
+        }
+        async function renderContestRanking(contestId, panel) {
             panel.innerHTML = '<p class="text-xs text-gray-400">جاري تحميل المشاركين...</p>';
-            const { data, error } = await supabaseClient.rpc('get_contest_participants', { p_contest_id: contestId });
+            const isReferralContest = Number(contestId) === 2;
+            const { data, error } = isReferralContest
+                ? await supabaseClient.rpc('get_contest_referral_ranking', { p_contest_id: contestId })
+                : await supabaseClient.rpc('get_contest_participants', { p_contest_id: contestId });
             if (error) {
                 console.error('Contest ranking error:', error);
-                panel.innerHTML = '<p class="text-xs text-amber-300">تعذر تحميل ترتيب المشاركين.</p>';
+                panel.innerHTML = `<p class="text-xs text-amber-300">تعذر تحميل ${isReferralContest ? 'ترتيب الدعوات' : 'ترتيب المشاركين'}.</p>`;
                 return;
             }
             const rows = Array.isArray(data) ? data : [];
-            panel.innerHTML = rows.length ? rows.map(r => `<div class="flex items-center justify-between bg-gray-950 rounded-lg p-2 text-xs"><span class="text-gray-200">${Number(r.participant_rank)}. ${contestEscape(r.display_name)}</span><span class="text-gray-500">${contestDateLabel(r.joined_at)}</span></div>`).join('') : '<p class="text-xs text-gray-500">لا يوجد مشاركون حتى الآن.</p>';
+            panel.innerHTML = rows.length ? rows.map(r => isReferralContest
+                ? `<div class="flex items-center justify-between gap-2 bg-gray-950 rounded-lg p-3 text-xs"><span class="text-gray-200 font-bold">${Number(r.participant_rank)}. ${contestEscape(r.username)}</span><span class="text-sky-300 font-black">${Number(r.referral_count || 0)} دعوة ناجحة</span></div>`
+                : `<div class="flex items-center justify-between bg-gray-950 rounded-lg p-2 text-xs"><span class="text-gray-200">${Number(r.participant_rank)}. ${contestEscape(r.display_name)}</span><span class="text-gray-500">${contestDateLabel(r.joined_at)}</span></div>`
+            ).join('') : '<p class="text-xs text-gray-500">لا يوجد مشاركون حتى الآن.</p>';
         }
         async function adminCreateContest(event) {
             event.preventDefault();
