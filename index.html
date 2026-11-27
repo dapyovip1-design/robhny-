@@ -1579,9 +1579,8 @@
 
         function getReferralUrl() {
             if (!currentUser?.id) return '';
-            const url = new URL(window.location.href);
-            url.search = '';
-            url.hash = '';
+            // استخدم دومين Vercel الثابت حتى لو فُتح الموقع من نسخة GitHub Pages.
+            const url = new URL('https://robhny.vercel.app/');
             url.searchParams.set('ref', currentUser.id);
             return url.toString();
         }
