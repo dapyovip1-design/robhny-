@@ -1456,12 +1456,70 @@
             await loadAdminContests();
             await loadPublicContests();
         }
+        function contestDateTimeLocal(value) {
+            const d = new Date(value);
+            if (Number.isNaN(d.getTime())) return '';
+            const pad = n => String(n).padStart(2, '0');
+            return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+        }
+
+        async function editAdminContest(contestId) {
+            if (!currentUserIsAdmin) return alert('غير مسموح.');
+            const id = Number(contestId);
+            if (!Number.isSafeInteger(id) || id <= 0) return;
+            const { data: contest, error: fetchError } = await supabaseClient
+                .from('contests').select('id,title,description,starts_at,ends_at').eq('id', id).single();
+            if (fetchError || !contest) {
+                console.error('Load contest for edit error:', fetchError);
+                return alert('تعذر تحميل بيانات المسابقة للتعديل.');
+            }
+            const title = prompt('اسم المسابقة:', contest.title);
+            if (title === null) return;
+            const description = prompt('وصف المسابقة وشروطها:', contest.description || '');
+            if (description === null) return;
+            const startsRaw = prompt('موعد البداية (YYYY-MM-DDTHH:mm):', contestDateTimeLocal(contest.starts_at));
+            if (startsRaw === null) return;
+            const endsRaw = prompt('موعد النهاية (YYYY-MM-DDTHH:mm):', contestDateTimeLocal(contest.ends_at));
+            if (endsRaw === null) return;
+            const starts = new Date(startsRaw), ends = new Date(endsRaw);
+            if (!title.trim() || !description.trim() || Number.isNaN(starts.getTime()) || Number.isNaN(ends.getTime()) || ends <= starts) {
+                return alert('تأكد من إدخال الاسم والوصف، وأن تاريخ الانتهاء بعد البداية.');
+            }
+            const { error } = await supabaseClient.from('contests').update({
+                title: title.trim(), description: description.trim(),
+                starts_at: starts.toISOString(), ends_at: ends.toISOString()
+            }).eq('id', id);
+            if (error) {
+                console.error('Update contest error:', error);
+                return alert('تعذر تعديل المسابقة. تأكد من صلاحيات الأدمن وقاعدة البيانات.');
+            }
+            alert('تم تعديل المسابقة بنجاح.');
+            await loadAdminContests();
+            await loadPublicContests();
+        }
+
+        async function deleteAdminContest(contestId) {
+            if (!currentUserIsAdmin) return alert('غير مسموح.');
+            const id = Number(contestId);
+            if (!Number.isSafeInteger(id) || id <= 0) return;
+            if (!confirm('هل أنت متأكد من حذف هذه المسابقة؟ سيتم حذف سجلات انضمام المشاركين المرتبطة بها أيضًا.')) return;
+            const { error } = await supabaseClient.from('contests').delete().eq('id', id);
+            if (error) {
+                console.error('Delete contest error:', error);
+                return alert('تعذر حذف المسابقة. تأكد من صلاحيات الأدمن وقاعدة البيانات.');
+            }
+            alert('تم حذف المسابقة.');
+            await loadAdminContests();
+            await loadPublicContests();
+        }
+
         async function loadAdminContests() {
             const host = document.getElementById('admin-contests-list');
             if (!host || !currentUserIsAdmin) return;
-            const { data, error } = await supabaseClient.from('contests').select('id,title,starts_at,ends_at').order('created_at', { ascending: false });
+            const { data, error } = await supabaseClient.from('contests')
+                .select('id,title,starts_at,ends_at').order('created_at', { ascending: false });
             if (error) { host.innerHTML = '<p class="text-xs text-amber-300">تعذر تحميل المسابقات.</p>'; return; }
-            host.innerHTML = data?.length ? data.map(c => `<div class="bg-gray-900 border border-gray-700 rounded-xl p-3"><p class="text-xs font-bold text-white">${contestEscape(c.title)}</p><p class="text-[10px] text-gray-400 mt-1">من ${contestDateLabel(c.starts_at)} إلى ${contestDateLabel(c.ends_at)}</p></div>`).join('') : '<p class="text-xs text-gray-500">لم تضف مسابقات بعد.</p>';
+            host.innerHTML = data?.length ? data.map(c => `<div class="bg-gray-900 border border-gray-700 rounded-xl p-3 space-y-2"><p class="text-xs font-bold text-white">${contestEscape(c.title)}</p><p class="text-[10px] text-gray-400">من ${contestDateLabel(c.starts_at)} إلى ${contestDateLabel(c.ends_at)}</p><div class="flex gap-2"><button type="button" onclick="editAdminContest(${Number(c.id)})" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white rounded-lg py-2 text-[11px] font-bold">✏️ تعديل</button><button type="button" onclick="deleteAdminContest(${Number(c.id)})" class="flex-1 bg-red-700 hover:bg-red-600 text-white rounded-lg py-2 text-[11px] font-bold">🗑️ حذف</button></div></div>`).join('') : '<p class="text-xs text-gray-500">لم تضف مسابقات بعد.</p>';
         }
 
         function getReferralUrl() {
