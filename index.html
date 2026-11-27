@@ -153,6 +153,9 @@
                         <button onclick="openProfile(); toggleMenuDropdown();" class="w-full text-right bg-sky-500/20 text-sky-300 hover:bg-sky-500/30 px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer">
                             👤 الملف الشخصي
                         </button>
+                        <button type="button" onclick="switchTab('referrals'); toggleMenuDropdown();" class="w-full text-right bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer">
+                            👥 ادع صديقك
+                        </button>
                         <button id="dropdown-admin-btn" onclick="openAdminPage(); toggleMenuDropdown();" class="hidden w-full text-right bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500/30 px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer">
                             ⚙️ لوحة الأدمن
                         </button>
@@ -185,6 +188,7 @@
                 <button type="button" onclick="openAdvertiserPage()" id="tab-advertiser" class="py-2 rounded-xl text-xs font-bold bg-gray-800 text-gray-300 transition cursor-pointer">📢 معلن</button>
                 <button onclick="switchTab('tasks')" id="tab-tasks" class="py-2 rounded-xl text-xs font-bold bg-emerald-500 text-black transition cursor-pointer">📌 المهام</button>
                 <button type="button" onclick="openLeaderboard()" class="py-2 rounded-xl text-xs font-bold bg-yellow-500/15 border border-yellow-500/30 text-yellow-300 transition cursor-pointer">🏆 أوائل المتسابقين</button>
+
             </div>
         </div>
 
@@ -417,6 +421,41 @@
             <div id="tasks-list" class="space-y-2.5">
                 <p class="text-xs text-gray-400 text-center py-3">جاري تحميل المهام...</p>
             </div>
+        </div>
+
+        <!-- صفحة دعوة الأصدقاء -->
+        <div id="view-referrals" class="hidden glass p-5 rounded-2xl space-y-4">
+            <div class="flex items-center justify-between gap-3">
+                <div>
+                    <h2 class="text-xl font-black text-white">👥 ادع صديقك</h2>
+                    <p class="text-xs text-gray-400 mt-1">شارك رابطك وتابع نشاط أصدقائك في ربحني</p>
+                </div>
+                <button type="button" onclick="switchTab('tasks')" class="bg-gray-800 border border-gray-700 text-gray-200 px-3 py-2 rounded-xl text-xs font-bold">رجوع ←</button>
+            </div>
+            <div class="bg-gray-900/70 border border-gray-800 rounded-2xl p-4 space-y-3">
+                <label class="block text-xs font-bold text-gray-300">رابط الدعوة الخاص بحسابك</label>
+                <div class="flex gap-2">
+                    <input id="referral-link" readonly dir="ltr" class="min-w-0 flex-1 bg-gray-950 border border-gray-700 rounded-xl p-3 text-xs text-emerald-300 text-left" value="جاري تجهيز الرابط...">
+                    <button type="button" onclick="copyReferralLink()" class="bg-emerald-500 text-black font-black px-4 rounded-xl text-sm">نسخ</button>
+                </div>
+                <button type="button" onclick="shareReferralLink()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl text-sm">مشاركة الرابط ↗</button>
+                <p class="text-[10px] text-gray-500 leading-6">لن تحصل على نقاط مقابل الدعوات. هذه الصفحة للمتابعة فقط، ولا تُعرض بيانات التواصل الخاصة بأصدقائك.</p>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div class="bg-gray-900/70 border border-gray-800 rounded-2xl p-4 text-center">
+                    <p class="text-xs text-gray-400">عدد الأصدقاء المدعوين</p>
+                    <p id="referral-count" class="text-3xl font-black text-emerald-400 mt-2">—</p>
+                </div>
+                <div class="bg-gray-900/70 border border-gray-800 rounded-2xl p-4 text-center">
+                    <p class="text-xs text-gray-400">إجمالي نقاط الأصدقاء</p>
+                    <p id="referral-points-total" class="text-3xl font-black text-sky-300 mt-2">—</p>
+                </div>
+            </div>
+            <div class="bg-gray-900/70 border border-gray-800 rounded-2xl p-4 space-y-3">
+                <h3 class="font-black text-white">نقاط أصدقائك</h3>
+                <div id="referral-friends-list" class="space-y-2"><p class="text-xs text-gray-400 text-center">جاري تحميل البيانات...</p></div>
+            </div>
+            <p id="referral-status" class="text-center text-xs text-gray-500"></p>
         </div>
 
         <!-- قسم المحفظة والسحب -->
@@ -659,6 +698,11 @@
         const SUPABASE_URL = 'https://yreoztmcjylqlaonuadb.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlyZW96dG1janlscWxhb251YWRiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTU1MjYyNjcsImV4cCI6MjExMTEwMjI2N30.4aOPvo2qZK0_iAs1gdekA_3Lqx6yO1v4C1kSB-djM0Y'; 
         const ADMIN_EMAIL = 'gezo@gmail.com';
+
+        const referralParam = new URLSearchParams(window.location.search).get('ref');
+        if (referralParam && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(referralParam)) {
+            try { if (!localStorage.getItem('robhny_referrer_id')) localStorage.setItem('robhny_referrer_id', referralParam); } catch (_) {}
+        }
 
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
             auth: {
@@ -910,16 +954,29 @@
             if (type === 'login') {
                 res = await supabaseClient.auth.signInWithPassword({ email, password });
             } else {
-                res = await supabaseClient.auth.signUp({ email, password });
+                let referrerId = null;
+                try { referrerId = localStorage.getItem('robhny_referrer_id'); } catch (_) {}
+                const validReferrer = referrerId && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(referrerId) ? referrerId : null;
+                res = await supabaseClient.auth.signUp({
+                    email,
+                    password,
+                    options: { data: validReferrer ? { referrer_id: validReferrer } : {} }
+                });
             }
 
             if (res.error) {
                 msg.textContent = 'خطأ: ' + res.error.message;
+            } else if (type === 'signup' && res.data.user) {
+                try { localStorage.removeItem('robhny_referrer_id'); } catch (_) {}
+                if (res.data.session?.user) {
+                    pendingLoginSession = res.data.session;
+                    await initializeSignedInUser(res.data.session.user);
+                } else {
+                    msg.textContent = 'تم إنشاء الحساب. تحقق من بريدك الإلكتروني لتأكيد التسجيل ثم سجّل الدخول.';
+                }
             } else if (res.data.session?.user) {
                 pendingLoginSession = res.data.session;
                 await initializeSignedInUser(res.data.session.user);
-            } else if (type === 'signup' && res.data.user) {
-                msg.textContent = 'تم إنشاء الحساب. تحقق من بريدك الإلكتروني لتأكيد التسجيل ثم سجّل الدخول.';
             }
         }
 
@@ -1176,7 +1233,7 @@
         }
 
         function openAdvertiserPage() {
-            ['wallet', 'tasks', 'advertiser', 'profile', 'about', 'support'].forEach(t => {
+            ['wallet', 'tasks', 'advertiser', 'profile', 'about', 'support', 'referrals'].forEach(t => {
                 const page = document.getElementById('view-' + t);
                 if (page) page.classList.add('hidden');
             });
@@ -1208,9 +1265,82 @@
 
             document.getElementById('view-' + tab).classList.remove('hidden');
             const activeBtn = document.getElementById('tab-' + tab);
-            activeBtn.classList.remove('bg-gray-800', 'text-gray-300');
-            activeBtn.classList.add('bg-emerald-500', 'text-black');
+            if (activeBtn) {
+                activeBtn.classList.remove('bg-gray-800', 'text-gray-300');
+                activeBtn.classList.add('bg-emerald-500', 'text-black');
+            }
             if (tab === 'wallet') loadMyWithdrawals();
+            if (tab === 'referrals') loadReferralStats();
+        }
+
+        function getReferralUrl() {
+            if (!currentUser?.id) return '';
+            const url = new URL(window.location.href);
+            url.search = '';
+            url.hash = '';
+            url.searchParams.set('ref', currentUser.id);
+            return url.toString();
+        }
+
+        async function copyReferralLink() {
+            const link = getReferralUrl();
+            if (!link) return showRobhnyNotice('تعذر تجهيز رابط الدعوة. سجّل الدخول أولاً.', 'warning');
+            try {
+                await navigator.clipboard.writeText(link);
+                showRobhnyNotice('تم نسخ رابط الدعوة بنجاح');
+            } catch (_) {
+                const input = document.getElementById('referral-link');
+                input.focus(); input.select();
+                try { document.execCommand('copy'); showRobhnyNotice('تم نسخ الرابط'); }
+                catch (e) { showRobhnyNotice('انسخ الرابط يدويًا من الخانة', 'warning'); }
+            }
+        }
+
+        async function shareReferralLink() {
+            const link = getReferralUrl();
+            if (!link) return showRobhnyNotice('تعذر تجهيز رابط الدعوة.', 'warning');
+            const shareData = { title: 'دعوة إلى ربحني', text: 'سجّل في موقع ربحني من خلال رابط الدعوة الخاص بي:', url: link };
+            if (navigator.share) {
+                try { await navigator.share(shareData); }
+                catch (error) { if (error?.name !== 'AbortError') showRobhnyNotice('تعذرت المشاركة. يمكنك نسخ الرابط.', 'warning'); }
+            } else {
+                await copyReferralLink();
+            }
+        }
+
+        async function loadReferralStats() {
+            if (!currentUser) return;
+            const linkInput = document.getElementById('referral-link');
+            const countEl = document.getElementById('referral-count');
+            const totalEl = document.getElementById('referral-points-total');
+            const listEl = document.getElementById('referral-friends-list');
+            const statusEl = document.getElementById('referral-status');
+            linkInput.value = getReferralUrl();
+            countEl.textContent = '…'; totalEl.textContent = '…';
+            listEl.innerHTML = '<p class="text-xs text-gray-400 text-center">جاري تحميل البيانات...</p>';
+            statusEl.textContent = '';
+            const { data, error } = await supabaseClient.rpc('get_my_referral_stats');
+            if (error) {
+                console.error('Referral stats error:', error);
+                countEl.textContent = '—'; totalEl.textContent = '—';
+                listEl.innerHTML = '<p class="text-xs text-amber-300 text-center">ميزة الدعوات تحتاج تفعيل قاعدة البيانات أولاً.</p>';
+                statusEl.textContent = 'بعد تنفيذ كود إعداد الدعوات في Supabase، ستظهر بيانات أصدقائك هنا.';
+                return;
+            }
+            const payload = data || {};
+            const friends = Array.isArray(payload.friends) ? payload.friends : [];
+            countEl.textContent = Number(payload.invited_count || friends.length).toLocaleString('ar-EG');
+            const total = friends.reduce((sum, friend) => sum + Math.max(0, Number(friend.points || 0)), 0);
+            totalEl.textContent = total.toLocaleString('ar-EG');
+            if (!friends.length) {
+                listEl.innerHTML = '<p class="text-xs text-gray-400 text-center py-3">لم يسجل أي صديق من رابطك حتى الآن.</p>';
+                return;
+            }
+            listEl.innerHTML = friends.map((friend, index) => {
+                const safeName = String(friend.display_name || `صديق ${index + 1}`).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+                const points = Math.max(0, Number(friend.points || 0)).toLocaleString('ar-EG');
+                return `<div class="flex items-center justify-between gap-3 bg-gray-950/70 border border-gray-800 rounded-xl p-3"><span class="text-sm font-bold text-gray-200">👤 ${safeName}</span><span class="text-xs font-black text-emerald-300">${points} نقطة</span></div>`;
+            }).join('');
         }
 
         const profileAvatarImages = [
