@@ -1427,7 +1427,7 @@
                 return;
             }
             const rows = Array.isArray(data) ? data : [];
-            panel.innerHTML = rows.length ? rows.map(r => `<div class="flex items-center justify-between bg-gray-950 rounded-lg p-2 text-xs"><span class="text-gray-200">${Number(r.position)}. ${contestEscape(r.display_name)}</span><span class="text-gray-500">${contestDateLabel(r.joined_at)}</span></div>`).join('') : '<p class="text-xs text-gray-500">لا يوجد مشاركون حتى الآن.</p>';
+            panel.innerHTML = rows.length ? rows.map(r => `<div class="flex items-center justify-between bg-gray-950 rounded-lg p-2 text-xs"><span class="text-gray-200">${Number(r.participant_rank)}. ${contestEscape(r.display_name)}</span><span class="text-gray-500">${contestDateLabel(r.joined_at)}</span></div>`).join('') : '<p class="text-xs text-gray-500">لا يوجد مشاركون حتى الآن.</p>';
         }
         async function adminCreateContest(event) {
             event.preventDefault();
@@ -1473,29 +1473,55 @@
                 console.error('Load contest for edit error:', fetchError);
                 return alert('تعذر تحميل بيانات المسابقة للتعديل.');
             }
-            const title = prompt('اسم المسابقة:', contest.title);
-            if (title === null) return;
-            const description = prompt('وصف المسابقة وشروطها:', contest.description || '');
-            if (description === null) return;
-            const startsRaw = prompt('موعد البداية (YYYY-MM-DDTHH:mm):', contestDateTimeLocal(contest.starts_at));
-            if (startsRaw === null) return;
-            const endsRaw = prompt('موعد النهاية (YYYY-MM-DDTHH:mm):', contestDateTimeLocal(contest.ends_at));
-            if (endsRaw === null) return;
-            const starts = new Date(startsRaw), ends = new Date(endsRaw);
-            if (!title.trim() || !description.trim() || Number.isNaN(starts.getTime()) || Number.isNaN(ends.getTime()) || ends <= starts) {
-                return alert('تأكد من إدخال الاسم والوصف، وأن تاريخ الانتهاء بعد البداية.');
-            }
-            const { error } = await supabaseClient.from('contests').update({
-                title: title.trim(), description: description.trim(),
-                starts_at: starts.toISOString(), ends_at: ends.toISOString()
-            }).eq('id', id);
-            if (error) {
-                console.error('Update contest error:', error);
-                return alert('تعذر تعديل المسابقة. تأكد من صلاحيات الأدمن وقاعدة البيانات.');
-            }
-            alert('تم تعديل المسابقة بنجاح.');
-            await loadAdminContests();
-            await loadPublicContests();
+
+            document.getElementById('edit-contest-modal')?.remove();
+            const modal = document.createElement('div');
+            modal.id = 'edit-contest-modal';
+            modal.className = 'fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 p-3';
+            modal.innerHTML = `
+                <form id="edit-contest-form" class="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl border border-gray-700 bg-gray-900 p-4 space-y-3 text-right">
+                    <div class="flex items-center justify-between gap-3"><h3 class="text-lg font-bold text-white">✏️ تعديل المسابقة</h3><button type="button" id="edit-contest-close" class="rounded-lg bg-gray-700 px-3 py-1 text-white">إغلاق</button></div>
+                    <label class="block text-sm text-gray-200">اسم المسابقة<input id="edit-contest-title" required maxlength="180" class="mt-1 w-full rounded-lg border border-gray-600 bg-gray-800 p-3 text-white" value="${contestEscape(contest.title)}"></label>
+                    <label class="block text-sm text-gray-200">الوصف والشروط<textarea id="edit-contest-description" required rows="5" class="mt-1 w-full rounded-lg border border-gray-600 bg-gray-800 p-3 text-white">${contestEscape(contest.description || '')}</textarea></label>
+                    <label class="block text-sm text-gray-200">موعد البداية<input id="edit-contest-start" type="datetime-local" required class="mt-1 w-full rounded-lg border border-gray-600 bg-gray-800 p-3 text-white" value="${contestDateTimeLocal(contest.starts_at)}"></label>
+                    <label class="block text-sm text-gray-200">موعد النهاية<input id="edit-contest-end" type="datetime-local" required class="mt-1 w-full rounded-lg border border-gray-600 bg-gray-800 p-3 text-white" value="${contestDateTimeLocal(contest.ends_at)}"></label>
+                    <p id="edit-contest-status" class="text-sm text-amber-300" aria-live="polite"></p>
+                    <button id="edit-contest-save" type="submit" class="w-full rounded-lg bg-blue-600 py-3 font-bold text-white">حفظ التعديلات</button>
+                </form>`;
+            document.body.appendChild(modal);
+            const closeModal = () => modal.remove();
+            document.getElementById('edit-contest-close').addEventListener('click', closeModal);
+            modal.addEventListener('click', event => { if (event.target === modal) closeModal(); });
+            document.getElementById('edit-contest-form').addEventListener('submit', async event => {
+                event.preventDefault();
+                const title = document.getElementById('edit-contest-title').value.trim();
+                const description = document.getElementById('edit-contest-description').value.trim();
+                const startsRaw = document.getElementById('edit-contest-start').value;
+                const endsRaw = document.getElementById('edit-contest-end').value;
+                const starts = new Date(startsRaw), ends = new Date(endsRaw);
+                const status = document.getElementById('edit-contest-status');
+                const save = document.getElementById('edit-contest-save');
+                if (!title || !description || !startsRaw || !endsRaw || Number.isNaN(starts.getTime()) || Number.isNaN(ends.getTime()) || ends <= starts) {
+                    status.textContent = 'تأكد من إدخال كل البيانات وأن موعد النهاية بعد البداية.';
+                    return;
+                }
+                save.disabled = true;
+                save.textContent = 'جاري الحفظ...';
+                const { error } = await supabaseClient.from('contests').update({
+                    title, description, starts_at: starts.toISOString(), ends_at: ends.toISOString()
+                }).eq('id', id);
+                if (error) {
+                    console.error('Update contest error:', error);
+                    status.textContent = 'تعذر حفظ التعديلات. تأكد من صلاحيات الأدمن وقاعدة البيانات.';
+                    save.disabled = false;
+                    save.textContent = 'حفظ التعديلات';
+                    return;
+                }
+                closeModal();
+                alert('تم تعديل المسابقة بنجاح.');
+                await loadAdminContests();
+                await loadPublicContests();
+            });
         }
 
         async function deleteAdminContest(contestId) {
