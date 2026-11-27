@@ -604,6 +604,7 @@
             }, delay);
         }
         let currentUser = null;
+        let currentUserIsAdmin = false;
         let currentBalance = 0;
         let selectedTaskForProof = null;
         let siteSettings = { points_per_dollar: 1000, min_withdraw: 1000, max_withdraw: 50000 };
@@ -645,6 +646,7 @@
             }
             if (event === 'SIGNED_OUT') {
                 currentUser = null;
+                currentUserIsAdmin = false;
                 initializedUserId = null;
                 document.getElementById('app-section').classList.add('hidden');
                 document.getElementById('admin-section').classList.add('hidden');
@@ -867,15 +869,12 @@
                 .single();
 
             if (!profile) {
-                const { data: newProfile } = await supabaseClient
-                    .from('profiles')
-                    .insert([{ id: user.id, email: user.email, balance: 0, is_banned: false, ban_reason: '' }])
-                    .select()
-                    .single();
-                profile = newProfile;
+                throw new Error('ملف الحساب غير موجود. تواصل مع الدعم الفني.');
             }
 
-            if (profile && profile.is_banned) {
+            currentUserIsAdmin = profile.is_admin === true;
+
+            if (profile.is_banned) {
                 document.getElementById('auth-section').classList.add('hidden');
                 document.getElementById('app-section').classList.add('hidden');
                 document.getElementById('admin-section').classList.add('hidden');
@@ -894,7 +893,7 @@
 
             await loadTasks();
 
-            if (user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
+            if (currentUserIsAdmin) {
                 document.getElementById('dropdown-admin-btn').classList.remove('hidden');
                 document.getElementById('setting-rate').value = siteSettings.points_per_dollar;
                 document.getElementById('setting-min').value = siteSettings.min_withdraw;
@@ -1026,7 +1025,7 @@
             }, () => scheduleRealtimeRefresh('user-submissions', () => loadTasks()));
 
             // لوحة الأدمن تستمع لكل التغييرات المهمة وتحدّث الأقسام المفتوحة دون Refresh.
-            if (user.email && user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
+            if (currentUserIsAdmin) {
                 const refreshAdminIfVisible = () => {
                     const adminSection = document.getElementById('admin-section');
                     if (adminSection && !adminSection.classList.contains('hidden')) {
@@ -1058,6 +1057,10 @@
         }
 
         function openAdminPage() {
+            if (!currentUserIsAdmin) {
+                alert('غير مسموح لك بفتح لوحة الإدارة.');
+                return;
+            }
             document.getElementById('app-section').classList.add('hidden');
             document.getElementById('admin-section').classList.remove('hidden');
             window.scrollTo(0, 0);
@@ -1532,10 +1535,11 @@
             const max = parseInt(document.getElementById('setting-max').value);
             const msg = document.getElementById('settings-msg');
 
-            const { error } = await supabaseClient
-                .from('site_settings')
-                .update({ points_per_dollar: rate, min_withdraw: min, max_withdraw: max })
-                .eq('id', 1);
+            const { error } = await supabaseClient.rpc('admin_update_site_settings', {
+                p_points_per_dollar: rate,
+                p_min_withdraw: min,
+                p_max_withdraw: max
+            });
 
             if (error) {
                 msg.textContent = 'خطأ: ' + error.message;
@@ -1552,7 +1556,11 @@
             const link = document.getElementById('new-task-link').value.trim();
             const msg = document.getElementById('admin-msg');
 
-            const { error } = await supabaseClient.from('site_tasks').insert([{ title, reward, link }]);
+            const { error } = await supabaseClient.rpc('admin_create_site_task', {
+                p_title: title,
+                p_reward: reward,
+                p_link: link
+            });
             if (!error) {
                 msg.textContent = '✅ تم نشر المهمة بنجاح!';
                 document.getElementById('new-task-title').value = '';
@@ -1711,10 +1719,12 @@
                 return;
             }
 
-            const { error } = await supabaseClient
-                .from('site_tasks')
-                .update({ title, reward, link })
-                .eq('id', id);
+            const { error } = await supabaseClient.rpc('admin_update_site_task', {
+                p_task_id: Number(id),
+                p_title: title,
+                p_reward: reward,
+                p_link: link
+            });
 
             if (error) {
                 alert('حدث خطأ أثناء التعديل: ' + error.message);
@@ -1729,7 +1739,9 @@
         async function deleteTask(id) {
             if (!(await robhnyConfirm('هل أنت متأكد من حذف هذه المهمة؟'))) return;
 
-            const { error } = await supabaseClient.from('site_tasks').delete().eq('id', id);
+            const { error } = await supabaseClient.rpc('admin_delete_site_task', {
+                p_task_id: Number(id)
+            });
             if (!error) {
                 alert('🗑️ تم حذف المهمة بنجاح!');
                 await loadTasks();
@@ -1789,11 +1801,9 @@
         async function rejectSubmission(subId, taskId) {
             if (!(await robhnyConfirm('هل أنت متأكد من رفض إثبات هذه المهمة؟ لن يحصل المستخدم على نقاط المهمة.'))) return;
 
-            const { error } = await supabaseClient
-                .from('task_submissions')
-                .update({ status: 'rejected' })
-                .eq('id', subId)
-                .eq('status', 'pending');
+            const { error } = await supabaseClient.rpc('admin_reject_task_submission', {
+                p_submission_id: Number(subId)
+            });
 
             if (error) {
                 showRobhnyNotice('تعذر رفض الإثبات: ' + error.message, 'error');
@@ -1843,10 +1853,15 @@
         }
 
         async function toggleBanUser(userId, newStatus, reason) {
-            const { error } = await supabaseClient.from('profiles').update({ is_banned: newStatus, ban_reason: reason }).eq('id', userId);
+            const { error } = await supabaseClient.rpc('admin_set_user_ban', {
+                target_user_id: userId,
+                new_status: newStatus,
+                reason_text: reason || ''
+            });
             if (error) {
                 alert('خطأ في تحديث حالة الحظر: ' + error.message);
             } else {
+                alert(newStatus ? 'تم حظر المستخدم بنجاح.' : 'تم فك الحظر عن المستخدم بنجاح.');
                 await loadAdminData();
             }
         }
