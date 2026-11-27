@@ -70,6 +70,16 @@
         #profile-avatar-preview img { width:100%;height:100%;object-fit:cover;border-radius:9999px; }
         .blue-glow { box-shadow:0 0 18px rgba(44,174,235,.22); }
 
+    
+        /* صفحة الدعوات مستقلة وتغطي الشاشة بالكامل */
+        #view-referrals.referral-fullscreen {
+            position: fixed !important; inset: 0 !important; z-index: 99999 !important;
+            width: 100vw !important; max-width: none !important; height: 100vh !important;
+            height: 100dvh !important; margin: 0 !important; border-radius: 0 !important;
+            overflow-y: auto !important; overscroll-behavior: contain;
+            padding: max(20px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom)) !important;
+            background: #070d18 !important; box-sizing: border-box !important;
+        }
     </style>
 </head>
 <body class="min-h-screen pb-10">
@@ -183,10 +193,11 @@
                 <p class="text-xs text-gray-400">رصيدك الحالي</p>
                 <h2 id="dashboard-balance" class="text-4xl font-black text-emerald-400 mt-1">0</h2>
             </div>
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <div class="grid grid-cols-2 sm:grid-cols-5 gap-2">
                 <button onclick="switchTab('wallet')" id="tab-wallet" class="py-2 rounded-xl text-xs font-bold bg-gray-800 text-gray-300 transition cursor-pointer">💳 المحفظة</button>
                 <button type="button" onclick="openAdvertiserPage()" id="tab-advertiser" class="py-2 rounded-xl text-xs font-bold bg-gray-800 text-gray-300 transition cursor-pointer">📢 معلن</button>
                 <button onclick="switchTab('tasks')" id="tab-tasks" class="py-2 rounded-xl text-xs font-bold bg-emerald-500 text-black transition cursor-pointer">📌 المهام</button>
+                <button onclick="switchTab('contests')" id="tab-contests" class="py-2 rounded-xl text-xs font-bold bg-gray-800 text-gray-300 transition cursor-pointer">🏆 مسابقات</button>
                 <button type="button" onclick="openLeaderboard()" class="py-2 rounded-xl text-xs font-bold bg-yellow-500/15 border border-yellow-500/30 text-yellow-300 transition cursor-pointer">🏆 أوائل المتسابقين</button>
 
             </div>
@@ -424,7 +435,7 @@
         </div>
 
         <!-- صفحة دعوة الأصدقاء -->
-        <div id="view-referrals" class="hidden glass p-5 rounded-2xl space-y-4">
+        <div id="view-referrals" class="hidden glass p-5 rounded-2xl space-y-4 referral-fullscreen">
             <div class="flex items-center justify-between gap-3">
                 <div>
                     <h2 class="text-xl font-black text-white">👥 ادع صديقك</h2>
@@ -457,6 +468,21 @@
             </div>
             <p id="referral-status" class="text-center text-xs text-gray-500"></p>
         </div>
+
+        <!-- صفحة المسابقات -->
+        <section id="view-contests" class="hidden glass p-5 rounded-2xl space-y-4">
+            <div class="flex items-center justify-between gap-3">
+                <div>
+                    <h2 class="text-xl font-black text-white">🏆 المسابقات</h2>
+                    <p class="text-xs text-gray-400 mt-1">انضم للمسابقات المتاحة وتابع المشاركين وترتيب الانضمام</p>
+                </div>
+                <button type="button" onclick="switchTab('tasks')" class="bg-gray-800 border border-gray-700 text-gray-200 px-3 py-2 rounded-xl text-xs font-bold">رجوع ←</button>
+            </div>
+            <div id="contests-list" class="space-y-3">
+                <p class="text-xs text-gray-400 text-center py-4">جاري تحميل المسابقات...</p>
+            </div>
+            <p id="contests-status" class="text-center text-xs text-gray-500"></p>
+        </section>
 
         <!-- قسم المحفظة والسحب -->
         <div id="view-wallet" class="hidden glass p-5 rounded-2xl space-y-4">
@@ -561,6 +587,25 @@
                 </form>
             </div>
 
+            <!-- إدارة المسابقات -->
+            <div class="glass p-5 rounded-2xl border border-yellow-500/30 space-y-3">
+                <h3 class="text-sm font-bold text-yellow-300">🏆 إدارة المسابقات</h3>
+                <form onsubmit="adminCreateContest(event)" class="space-y-2.5">
+                    <input id="contest-admin-title" type="text" maxlength="120" required placeholder="اسم المسابقة" class="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-xs text-white outline-none">
+                    <textarea id="contest-admin-description" maxlength="2000" rows="3" required placeholder="وصف المسابقة وشروطها" class="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-xs text-white outline-none"></textarea>
+                    <label class="block text-[11px] text-gray-400">تاريخ ووقت بدء المسابقة</label>
+                    <input id="contest-admin-start" type="datetime-local" required class="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-xs text-white outline-none">
+                    <label class="block text-[11px] text-gray-400">تاريخ ووقت انتهاء المسابقة</label>
+                    <input id="contest-admin-end" type="datetime-local" required class="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-xs text-white outline-none">
+                    <button type="submit" class="w-full bg-yellow-500 hover:bg-yellow-400 text-black font-black py-3 rounded-xl text-xs">إضافة المسابقة</button>
+                    <p id="contest-admin-status" class="text-center text-xs text-yellow-200"></p>
+                </form>
+                <div class="border-t border-gray-700 pt-3 space-y-2">
+                    <h4 class="text-xs font-bold text-white">المسابقات المنشورة</h4>
+                    <div id="admin-contests-list" class="space-y-2"><p class="text-xs text-gray-400 text-center">جاري التحميل...</p></div>
+                </div>
+            </div>
+
             <!-- إدارة وتعديل المهام الحالية -->
             <div class="glass p-5 rounded-2xl border border-amber-500/30 space-y-3">
                 <h3 class="text-sm font-bold text-amber-400">⚙️ إدارة وتعديل المهام الحالية</h3>
@@ -588,8 +633,7 @@
             <!-- رسائل وإشعارات الأدمن -->
             <div class="glass p-5 rounded-2xl border border-sky-400/40 space-y-3 blue-glow">
                 <h3 class="text-sm font-black text-sky-300">📢 إرسال إشعار عام لكل المستخدمين</h3>
-                <input id="broadcast-title" maxlength="100" placeholder="عنوان الإشعار (مثلاً: تحديث جديد)" class="w-full bg-gray-950 border border-gray-700 rounded-xl p-3 text-xs text-white outline-none">
-                <textarea id="broadcast-message" maxlength="1500" rows="4" placeholder="اكتب تفاصيل التحديث أو الإعلان هنا..." class="w-full bg-gray-950 border border-gray-700 rounded-xl p-3 text-xs text-white outline-none"></textarea>
+                <textarea id="broadcast-message" maxlength="1500" rows="5" placeholder="اكتب الرسالة التي تريد إرسالها لجميع المستخدمين..." class="w-full bg-gray-950 border border-gray-700 rounded-xl p-3 text-xs text-white outline-none"></textarea>
                 <button type="button" onclick="sendBroadcastNotification()" class="w-full bg-sky-600 hover:bg-sky-500 text-white font-black py-3 rounded-xl text-xs">إرسال الإشعار للجميع</button>
                 <p id="broadcast-status" class="text-center text-xs text-sky-200"></p>
             </div>
@@ -616,8 +660,7 @@
             <h3 class="text-base font-black text-sky-300">✉️ إرسال رسالة خاصة</h3>
             <p id="admin-message-recipient" class="text-xs text-gray-300"></p>
             <input id="admin-message-user-id" type="hidden">
-            <input id="admin-private-title" maxlength="100" placeholder="عنوان الرسالة" class="w-full bg-gray-950 border border-gray-700 rounded-xl p-3 text-xs text-white">
-            <textarea id="admin-private-message" maxlength="1500" rows="4" placeholder="اكتب رسالتك للمستخدم..." class="w-full bg-gray-950 border border-gray-700 rounded-xl p-3 text-xs text-white"></textarea>
+            <textarea id="admin-private-message" maxlength="1500" rows="5" placeholder="اكتب رسالتك للمستخدم..." class="w-full bg-gray-950 border border-gray-700 rounded-xl p-3 text-xs text-white"></textarea>
             <p id="admin-private-status" class="text-xs text-center text-sky-200"></p>
             <div class="flex gap-2"><button type="button" onclick="sendPrivateAdminMessage()" class="flex-1 bg-sky-600 text-white font-bold py-2.5 rounded-xl text-xs">إرسال</button><button type="button" onclick="closePrivateMessageModal()" class="flex-1 bg-gray-800 text-gray-200 font-bold py-2.5 rounded-xl text-xs">إلغاء</button></div>
         </div>
@@ -1211,7 +1254,7 @@
         }
 
         function openSupportPage() {
-            ['wallet', 'tasks', 'advertiser', 'profile', 'about'].forEach(t => {
+            ['wallet', 'tasks', 'contests', 'advertiser', 'profile', 'about'].forEach(t => {
                 const page = document.getElementById('view-' + t);
                 if (page) page.classList.add('hidden');
             });
@@ -1223,7 +1266,7 @@
         function openAboutPage() {
             const supportPage = document.getElementById('view-support');
             if (supportPage) supportPage.classList.add('hidden');
-            ['wallet', 'tasks', 'advertiser', 'profile'].forEach(t => {
+            ['wallet', 'tasks', 'contests', 'advertiser', 'profile'].forEach(t => {
                 const page = document.getElementById('view-' + t);
                 if (page) page.classList.add('hidden');
             });
@@ -1233,7 +1276,7 @@
         }
 
         function openAdvertiserPage() {
-            ['wallet', 'tasks', 'advertiser', 'profile', 'about', 'support', 'referrals'].forEach(t => {
+            ['wallet', 'tasks', 'contests', 'advertiser', 'profile', 'about', 'support', 'referrals'].forEach(t => {
                 const page = document.getElementById('view-' + t);
                 if (page) page.classList.add('hidden');
             });
@@ -1250,27 +1293,175 @@
             window.scrollTo(0, 0);
         }
 
+        let referralRefreshTimer = null;
+        let referralStatsLoading = false;
+
+        function stopReferralAutoRefresh() {
+            if (referralRefreshTimer) { clearInterval(referralRefreshTimer); referralRefreshTimer = null; }
+        }
+
+        function startReferralAutoRefresh() {
+            stopReferralAutoRefresh();
+            // تحديث تلقائي كل 5 ثوانٍ طالما صفحة الدعوات مفتوحة، دون الحاجة إلى إعادة تحميل الصفحة.
+            referralRefreshTimer = setInterval(() => {
+                const page = document.getElementById('view-referrals');
+                if (page && !page.classList.contains('hidden') && currentUser) loadReferralStats(true);
+            }, 5000);
+        }
+
         function switchTab(tab) {
-            // إخفاء كل الصفحات المنفصلة أولاً حتى لا تظل صفحة الدعم أو عن الموقع ظاهرة أسفل التبويبات.
-            ['wallet', 'tasks', 'advertiser', 'profile', 'about', 'support'].forEach(t => {
+            stopReferralAutoRefresh();
+            // إخفاء كل الأقسام الأخرى حتى تكون الدعوات صفحة مستقلة تمامًا.
+            ['wallet', 'tasks', 'contests', 'advertiser', 'profile', 'about', 'support', 'referrals'].forEach(t => {
                 const page = document.getElementById('view-' + t);
                 if (page) page.classList.add('hidden');
             });
-            document.getElementById('dashboard-navigation').classList.remove('hidden');
-            ['wallet', 'tasks', 'advertiser'].forEach(t => {
+            const dashboardNav = document.getElementById('dashboard-navigation');
+            if (dashboardNav) dashboardNav.classList.toggle('hidden', tab === 'referrals');
+            ['wallet', 'tasks', 'contests', 'advertiser'].forEach(t => {
                 const btn = document.getElementById('tab-' + t);
-                btn.classList.remove('bg-emerald-500', 'text-black');
-                btn.classList.add('bg-gray-800', 'text-gray-300');
+                if (btn) {
+                    btn.classList.remove('bg-emerald-500', 'text-black');
+                    btn.classList.add('bg-gray-800', 'text-gray-300');
+                }
             });
 
-            document.getElementById('view-' + tab).classList.remove('hidden');
+            const targetPage = document.getElementById('view-' + tab);
+            if (targetPage) targetPage.classList.remove('hidden');
             const activeBtn = document.getElementById('tab-' + tab);
             if (activeBtn) {
                 activeBtn.classList.remove('bg-gray-800', 'text-gray-300');
                 activeBtn.classList.add('bg-emerald-500', 'text-black');
             }
             if (tab === 'wallet') loadMyWithdrawals();
-            if (tab === 'referrals') loadReferralStats();
+            if (tab === 'contests') { window.scrollTo(0, 0); loadPublicContests(); startContestAutoRefresh(); } else stopContestAutoRefresh();
+            if (tab === 'referrals') {
+                window.scrollTo(0, 0);
+                loadReferralStats();
+                startReferralAutoRefresh();
+            }
+        }
+
+        // تحديث تلقائي للمسابقات أثناء فتح صفحتها
+        let contestRefreshTimer = null;
+        let contestLoadBusy = false;
+        function stopContestAutoRefresh() {
+            if (contestRefreshTimer) { clearInterval(contestRefreshTimer); contestRefreshTimer = null; }
+        }
+        function startContestAutoRefresh() {
+            stopContestAutoRefresh();
+            contestRefreshTimer = setInterval(() => {
+                const page = document.getElementById('view-contests');
+                if (page && !page.classList.contains('hidden') && currentUser) loadPublicContests(true);
+            }, 5000);
+        }
+        function contestDateLabel(value) {
+            if (!value) return '—';
+            const d = new Date(value);
+            return Number.isNaN(d.getTime()) ? '—' : d.toLocaleString('ar-EG', { dateStyle: 'medium', timeStyle: 'short' });
+        }
+        function contestEscape(value) {
+            return escapeLeaderboardText(String(value ?? ''));
+        }
+        async function loadPublicContests(silent = false) {
+            if (!currentUser || contestLoadBusy) return;
+            contestLoadBusy = true;
+            const host = document.getElementById('contests-list');
+            try {
+                const { data, error } = await supabaseClient.rpc('get_public_contests');
+                if (error) throw error;
+                const contests = Array.isArray(data) ? data : (data || []);
+                if (!contests.length) {
+                    host.innerHTML = '<p class="text-xs text-gray-400 text-center py-5">لا توجد مسابقات حاليًا. تابعنا لمعرفة الجديد.</p>';
+                    return;
+                }
+                host.innerHTML = contests.map(c => {
+                    const now = Date.now(), start = new Date(c.starts_at).getTime(), end = new Date(c.ends_at).getTime();
+                    const joined = c.joined === true;
+                    const state = now < start ? 'لم تبدأ بعد' : now > end ? 'انتهت' : 'مفتوحة للانضمام';
+                    const stateClass = now >= start && now <= end ? 'text-emerald-300' : 'text-amber-300';
+                    const canJoin = !joined && now >= start && now <= end;
+                    return `<article class="bg-gray-900/80 border border-gray-700 rounded-2xl p-4 space-y-3">
+                        <div class="flex items-start justify-between gap-2"><h3 class="text-sm font-black text-white">${contestEscape(c.title)}</h3><span class="text-[10px] ${stateClass} font-bold shrink-0">${state}</span></div>
+                        <p class="text-xs text-gray-300 leading-7 whitespace-pre-wrap">${contestEscape(c.description)}</p>
+                        <div class="grid grid-cols-2 gap-2 text-[10px] text-gray-400">
+                            <div class="bg-gray-950 rounded-lg p-2">البداية<br><span class="text-white">${contestDateLabel(c.starts_at)}</span></div>
+                            <div class="bg-gray-950 rounded-lg p-2">النهاية<br><span class="text-white">${contestDateLabel(c.ends_at)}</span></div>
+                        </div>
+                        <div class="flex items-center justify-between gap-2">
+                            <span class="text-xs text-sky-300 font-bold">👥 عدد المشاركين: ${Number(c.participants_count || 0)}</span>
+                            ${joined ? '<span class="text-xs text-emerald-300 font-bold">✓ أنت مشترك</span>' : canJoin ? `<button onclick="joinContest(${Number(c.id)})" class="bg-emerald-500 text-black font-black text-xs px-4 py-2 rounded-xl">انضم للمسابقة</button>` : '<span class="text-[10px] text-gray-500">الانضمام غير متاح الآن</span>'}
+                        </div>
+                        <div class="border-t border-gray-700 pt-3">
+                            <button type="button" onclick="toggleContestRanking(${Number(c.id)})" class="text-xs text-yellow-300 font-bold">عرض المشاركين والترتيب ▾</button>
+                            <div id="contest-ranking-${Number(c.id)}" class="hidden mt-3 space-y-2"><p class="text-xs text-gray-500">اضغط لعرض الترتيب.</p></div>
+                        </div>
+                    </article>`;
+                }).join('');
+            } catch (error) {
+                console.error('Load contests error:', error);
+                if (!silent) host.innerHTML = '<p class="text-xs text-amber-300 text-center">تعذر تحميل المسابقات. تأكد من تنفيذ كود إعداد المسابقات في Supabase.</p>';
+            } finally { contestLoadBusy = false; }
+        }
+        async function joinContest(contestId) {
+            if (!currentUser) return;
+            const { error } = await supabaseClient.rpc('join_contest', { p_contest_id: contestId });
+            if (error) {
+                console.error('Join contest error:', error);
+                showRobhnyNotice(error.message || 'تعذر الانضمام للمسابقة.', 'warning');
+                return;
+            }
+            showRobhnyNotice('تم انضمامك للمسابقة بنجاح');
+            await loadPublicContests();
+        }
+        async function toggleContestRanking(contestId) {
+            const panel = document.getElementById('contest-ranking-' + contestId);
+            if (!panel) return;
+            if (!panel.classList.contains('hidden')) { panel.classList.add('hidden'); return; }
+            panel.classList.remove('hidden');
+            panel.innerHTML = '<p class="text-xs text-gray-400">جاري تحميل المشاركين...</p>';
+            const { data, error } = await supabaseClient.rpc('get_contest_participants', { p_contest_id: contestId });
+            if (error) {
+                console.error('Contest ranking error:', error);
+                panel.innerHTML = '<p class="text-xs text-amber-300">تعذر تحميل ترتيب المشاركين.</p>';
+                return;
+            }
+            const rows = Array.isArray(data) ? data : [];
+            panel.innerHTML = rows.length ? rows.map(r => `<div class="flex items-center justify-between bg-gray-950 rounded-lg p-2 text-xs"><span class="text-gray-200">${Number(r.position)}. ${contestEscape(r.display_name)}</span><span class="text-gray-500">${contestDateLabel(r.joined_at)}</span></div>`).join('') : '<p class="text-xs text-gray-500">لا يوجد مشاركون حتى الآن.</p>';
+        }
+        async function adminCreateContest(event) {
+            event.preventDefault();
+            if (!currentUserIsAdmin) return alert('غير مسموح.');
+            const title = document.getElementById('contest-admin-title').value.trim();
+            const description = document.getElementById('contest-admin-description').value.trim();
+            const startsRaw = document.getElementById('contest-admin-start').value;
+            const endsRaw = document.getElementById('contest-admin-end').value;
+            const starts = new Date(startsRaw), ends = new Date(endsRaw);
+            const status = document.getElementById('contest-admin-status');
+            if (!title || !description || !startsRaw || !endsRaw || Number.isNaN(starts.getTime()) || Number.isNaN(ends.getTime()) || ends <= starts) {
+                status.textContent = 'تأكد من البيانات وأن تاريخ الانتهاء بعد تاريخ البداية.';
+                return;
+            }
+            status.textContent = 'جاري نشر المسابقة...';
+            const { error } = await supabaseClient.from('contests').insert({
+                title, description, starts_at: starts.toISOString(), ends_at: ends.toISOString(), created_by: currentUser.id
+            });
+            if (error) {
+                console.error('Create contest error:', error);
+                status.textContent = 'تعذر إضافة المسابقة. تأكد من إعدادات قاعدة البيانات.';
+                return;
+            }
+            event.target.reset();
+            status.textContent = 'تم نشر المسابقة بنجاح.';
+            await loadAdminContests();
+            await loadPublicContests();
+        }
+        async function loadAdminContests() {
+            const host = document.getElementById('admin-contests-list');
+            if (!host || !currentUserIsAdmin) return;
+            const { data, error } = await supabaseClient.from('contests').select('id,title,starts_at,ends_at').order('created_at', { ascending: false });
+            if (error) { host.innerHTML = '<p class="text-xs text-amber-300">تعذر تحميل المسابقات.</p>'; return; }
+            host.innerHTML = data?.length ? data.map(c => `<div class="bg-gray-900 border border-gray-700 rounded-xl p-3"><p class="text-xs font-bold text-white">${contestEscape(c.title)}</p><p class="text-[10px] text-gray-400 mt-1">من ${contestDateLabel(c.starts_at)} إلى ${contestDateLabel(c.ends_at)}</p></div>`).join('') : '<p class="text-xs text-gray-500">لم تضف مسابقات بعد.</p>';
         }
 
         function getReferralUrl() {
@@ -1308,17 +1499,21 @@
             }
         }
 
-        async function loadReferralStats() {
-            if (!currentUser) return;
+        async function loadReferralStats(silent = false) {
+            if (!currentUser || referralStatsLoading) return;
+            referralStatsLoading = true;
             const linkInput = document.getElementById('referral-link');
             const countEl = document.getElementById('referral-count');
             const totalEl = document.getElementById('referral-points-total');
             const listEl = document.getElementById('referral-friends-list');
             const statusEl = document.getElementById('referral-status');
             linkInput.value = getReferralUrl();
-            countEl.textContent = '…'; totalEl.textContent = '…';
-            listEl.innerHTML = '<p class="text-xs text-gray-400 text-center">جاري تحميل البيانات...</p>';
-            statusEl.textContent = '';
+            if (!silent) {
+                countEl.textContent = '…'; totalEl.textContent = '…';
+                listEl.innerHTML = '<p class="text-xs text-gray-400 text-center">جاري تحميل البيانات...</p>';
+                statusEl.textContent = '';
+            }
+            try {
             const { data, error } = await supabaseClient.rpc('get_my_referral_stats');
             if (error) {
                 console.error('Referral stats error:', error);
@@ -1341,6 +1536,12 @@
                 const points = Math.max(0, Number(friend.points || 0)).toLocaleString('ar-EG');
                 return `<div class="flex items-center justify-between gap-3 bg-gray-950/70 border border-gray-800 rounded-xl p-3"><span class="text-sm font-bold text-gray-200">👤 ${safeName}</span><span class="text-xs font-black text-emerald-300">${points} نقطة</span></div>`;
             }).join('');
+            } catch (loadError) {
+                console.error('Referral refresh failed:', loadError);
+                if (!silent) statusEl.textContent = 'تعذر تحديث البيانات الآن. حاول مرة أخرى.';
+            } finally {
+                referralStatsLoading = false;
+            }
         }
 
         const profileAvatarImages = [
@@ -1879,6 +2080,7 @@
         }
 
         async function loadAdminData() {
+            await loadAdminContests();
             const adminTasksList = document.getElementById('admin-tasks-list');
             const { data: tasks } = await supabaseClient.from('site_tasks').select('*').order('id', { ascending: false });
 
@@ -2189,11 +2391,9 @@
             }
         }
 
-        async function sendAdminMessage(userId, title, body, broadcast) {
-            const cleanTitle = String(title || '').trim();
-            const cleanBody = String(body || '').trim();
-            if (!cleanTitle || !cleanBody) throw new Error('اكتب عنوان الرسالة ومحتواها أولاً.');
-            const message = cleanTitle + "\n\n" + cleanBody;
+        async function sendAdminMessage(userId, messageText, broadcast) {
+            const message = String(messageText || '').trim();
+            if (!message) throw new Error('اكتب الرسالة أولاً.');
             const { data, error } = await supabaseClient.rpc('admin_send_notification', {
                 p_user_id: userId || null, p_message: message, p_broadcast: !!broadcast
             });
@@ -2201,23 +2401,20 @@
             return data;
         }
         async function sendBroadcastNotification() {
-            const title = document.getElementById('broadcast-title').value;
-            const body = document.getElementById('broadcast-message').value;
+            const message = document.getElementById('broadcast-message').value;
             const status = document.getElementById('broadcast-status');
-            if (!title.trim() || !body.trim()) { status.textContent = 'اكتب العنوان والرسالة أولاً.'; return; }
-            if (!(await robhnyConfirm('إرسال هذا الإشعار إلى جميع المستخدمين؟'))) return;
+            if (!message.trim()) { status.textContent = 'اكتب الرسالة أولاً.'; return; }
+            if (!(await robhnyConfirm('إرسال هذه الرسالة إلى جميع المستخدمين؟'))) return;
             status.textContent = 'جاري الإرسال...';
             try {
-                const count = await sendAdminMessage(null, title, body, true);
+                const count = await sendAdminMessage(null, message, true);
                 status.textContent = `تم إرسال الإشعار بنجاح إلى ${Number(count || 0)} حساب.`;
-                document.getElementById('broadcast-title').value = '';
                 document.getElementById('broadcast-message').value = '';
             } catch (e) { status.textContent = 'تعذر الإرسال: ' + (e.message || e); }
         }
         function openPrivateMessageModal(userId, recipient) {
             document.getElementById('admin-message-user-id').value = userId;
             document.getElementById('admin-message-recipient').textContent = 'المستلم: ' + recipient;
-            document.getElementById('admin-private-title').value = '';
             document.getElementById('admin-private-message').value = '';
             document.getElementById('admin-private-status').textContent = '';
             document.getElementById('admin-user-message-modal').classList.remove('hidden');
@@ -2225,12 +2422,12 @@
         function closePrivateMessageModal() { document.getElementById('admin-user-message-modal').classList.add('hidden'); }
         async function sendPrivateAdminMessage() {
             const userId = document.getElementById('admin-message-user-id').value;
-            const title = document.getElementById('admin-private-title').value;
-            const body = document.getElementById('admin-private-message').value;
+            const message = document.getElementById('admin-private-message').value;
             const status = document.getElementById('admin-private-status');
+            if (!message.trim()) { status.textContent = 'اكتب الرسالة أولاً.'; return; }
             status.textContent = 'جاري الإرسال...';
             try {
-                await sendAdminMessage(userId, title, body, false);
+                await sendAdminMessage(userId, message, false);
                 status.textContent = 'تم إرسال الرسالة بنجاح.';
                 setTimeout(closePrivateMessageModal, 900);
             } catch (e) { status.textContent = 'تعذر الإرسال: ' + (e.message || e); }
