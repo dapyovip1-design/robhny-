@@ -180,9 +180,10 @@
                 <p class="text-xs text-gray-400">رصيدك الحالي</p>
                 <h2 id="dashboard-balance" class="text-4xl font-black text-emerald-400 mt-1">0</h2>
             </div>
-            <div class="grid grid-cols-3 gap-2">
-                <button onclick="switchTab('wallet')" id="tab-wallet" class="py-2 rounded-xl text-xs font-bold bg-gray-800 text-gray-300 transition cursor-pointer">المحفظة</button>
-                <button onclick="switchTab('tasks')" id="tab-tasks" class="py-2 rounded-xl text-xs font-bold bg-emerald-500 text-black transition cursor-pointer">المهام</button>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <button onclick="switchTab('wallet')" id="tab-wallet" class="py-2 rounded-xl text-xs font-bold bg-gray-800 text-gray-300 transition cursor-pointer">💳 المحفظة</button>
+                <button type="button" onclick="openAdvertiserPage()" id="tab-advertiser" class="py-2 rounded-xl text-xs font-bold bg-gray-800 text-gray-300 transition cursor-pointer">📢 معلن</button>
+                <button onclick="switchTab('tasks')" id="tab-tasks" class="py-2 rounded-xl text-xs font-bold bg-emerald-500 text-black transition cursor-pointer">📌 المهام</button>
                 <button type="button" onclick="openLeaderboard()" class="py-2 rounded-xl text-xs font-bold bg-yellow-500/15 border border-yellow-500/30 text-yellow-300 transition cursor-pointer">🏆 أوائل المتسابقين</button>
             </div>
         </div>
@@ -445,6 +446,30 @@
                 </div>
             </div>
         </div>
+
+        <!-- صفحة خدمة الإعلان -->
+        <section id="view-advertiser" class="hidden glass p-5 rounded-2xl space-y-5 text-center">
+            <div class="flex items-center justify-between gap-3">
+                <div class="text-right">
+                    <h2 class="text-xl font-black text-emerald-300">📢 خدمة المعلن</h2>
+                    <p class="text-xs text-gray-400 mt-1">أعلن عن مشروعك داخل ربحني</p>
+                </div>
+                <button type="button" onclick="closeAdvertiserPage()" class="bg-gray-800 border border-gray-700 text-gray-200 px-3 py-2 rounded-xl text-xs font-bold">رجوع ←</button>
+            </div>
+            <div class="bg-gray-900/70 border border-emerald-500/25 rounded-2xl p-5 space-y-4">
+                <div class="text-4xl">🚀</div>
+                <h3 class="text-lg font-black text-white">ميزة جديدة في الموقع!</h3>
+                <p class="text-sm text-gray-300 leading-8">تتيح لك هذه الميزة الإعلان عن موقعك الإلكتروني أو تطبيقك داخل موقع ربحني، ليتمكن مستخدمونا من تجربة موقعك أو تطبيقك والتعرف على خدماتك.</p>
+                <p class="text-sm text-gray-300 leading-8">ويمكنك أيضًا الإعلان عن صفحتك الخاصة على مواقع التواصل الاجتماعي وزيادة وصولك إلى جمهور جديد.</p>
+            </div>
+            <div class="bg-gray-900/70 border border-pink-500/25 rounded-2xl p-5 space-y-3">
+                <p class="text-sm text-white font-bold leading-7">للاستفسار عن هذه الخدمة، يُرجى التوجه للتحدث مع المطور عبر إنستغرام.</p>
+                <a href="https://www.instagram.com/dowep_1?fqnt=Y3JlZTl5MDgxZ3I4" target="_blank" rel="noopener noreferrer" aria-label="التواصل مع المطور عبر إنستغرام" class="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 hover:opacity-90 text-white font-bold px-6 py-3 rounded-xl text-sm transition">
+                    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="2"/><circle cx="17.5" cy="6.8" r="1.2" fill="currentColor"/></svg>
+                    تحدث مع المطور عبر إنستغرام
+                </a>
+            </div>
+        </section>
 
         <footer class="text-center text-[11px] text-gray-500 pt-4">
             جميع الحقوق محفوظة © 2026 ربحني
@@ -1129,7 +1154,7 @@
         }
 
         function openSupportPage() {
-            ['wallet', 'tasks', 'profile', 'about'].forEach(t => {
+            ['wallet', 'tasks', 'advertiser', 'profile', 'about'].forEach(t => {
                 const page = document.getElementById('view-' + t);
                 if (page) page.classList.add('hidden');
             });
@@ -1141,7 +1166,7 @@
         function openAboutPage() {
             const supportPage = document.getElementById('view-support');
             if (supportPage) supportPage.classList.add('hidden');
-            ['wallet', 'tasks', 'profile'].forEach(t => {
+            ['wallet', 'tasks', 'advertiser', 'profile'].forEach(t => {
                 const page = document.getElementById('view-' + t);
                 if (page) page.classList.add('hidden');
             });
@@ -1150,14 +1175,32 @@
             window.scrollTo(0, 0);
         }
 
+        function openAdvertiserPage() {
+            ['wallet', 'tasks', 'advertiser', 'profile', 'about', 'support'].forEach(t => {
+                const page = document.getElementById('view-' + t);
+                if (page) page.classList.add('hidden');
+            });
+            document.getElementById('dashboard-navigation').classList.add('hidden');
+            document.getElementById('view-advertiser').classList.remove('hidden');
+            window.scrollTo(0, 0);
+        }
+
+        function closeAdvertiserPage() {
+            const page = document.getElementById('view-advertiser');
+            if (page) page.classList.add('hidden');
+            document.getElementById('dashboard-navigation').classList.remove('hidden');
+            switchTab('tasks');
+            window.scrollTo(0, 0);
+        }
+
         function switchTab(tab) {
             // إخفاء كل الصفحات المنفصلة أولاً حتى لا تظل صفحة الدعم أو عن الموقع ظاهرة أسفل التبويبات.
-            ['wallet', 'tasks', 'profile', 'about', 'support'].forEach(t => {
+            ['wallet', 'tasks', 'advertiser', 'profile', 'about', 'support'].forEach(t => {
                 const page = document.getElementById('view-' + t);
                 if (page) page.classList.add('hidden');
             });
             document.getElementById('dashboard-navigation').classList.remove('hidden');
-            ['wallet', 'tasks'].forEach(t => {
+            ['wallet', 'tasks', 'advertiser'].forEach(t => {
                 const btn = document.getElementById('tab-' + t);
                 btn.classList.remove('bg-emerald-500', 'text-black');
                 btn.classList.add('bg-gray-800', 'text-gray-300');
