@@ -565,9 +565,15 @@
             <h3 class="text-sm font-bold text-white">📤 تقديم إثبات تنفيذ المهمة</h3>
             <p id="modal-task-title" class="text-xs text-emerald-400 font-semibold"></p>
             <p class="text-[11px] text-gray-400">اكتب يوزرك أو رابط صفحتك:</p>
-            <input type="text" id="proof-input" placeholder="اكتب الإثبات هنا..." class="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-xs text-white outline-none">
+            <input type="text" id="proof-input" placeholder="اكتب اليوزر أو رابط الصفحة..." class="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-xs text-white outline-none">
+            <div class="space-y-2">
+                <label for="proof-image-input" class="block text-xs font-bold text-sky-200">📸 صورة شاشة للإثبات</label>
+                <input type="file" id="proof-image-input" accept="image/jpeg,image/png,image/webp" class="block w-full text-xs text-gray-300 file:ml-3 file:rounded-lg file:border-0 file:bg-sky-500/20 file:px-3 file:py-2 file:text-sky-200 file:font-bold">
+                <p class="text-[10px] text-gray-500">اختار ملف للصورة: JPG أو PNG أو WEBP — الحد الأقصى 5 ميجابايت.</p>
+                <p id="proof-image-status" class="text-[11px] text-sky-300"></p>
+            </div>
             <div class="flex gap-2 pt-1">
-                <button onclick="submitProof()" class="flex-1 bg-emerald-500 text-black font-bold py-2.5 rounded-xl text-xs cursor-pointer">إرسال للمراجعة</button>
+                <button id="submit-proof-button" onclick="submitProof()" class="flex-1 bg-emerald-500 text-black font-bold py-2.5 rounded-xl text-xs cursor-pointer">إرسال للمراجعة</button>
                 <button onclick="closeProofModal()" class="flex-1 bg-gray-800 text-gray-300 font-bold py-2.5 rounded-xl text-xs cursor-pointer">إلغاء</button>
             </div>
         </div>
@@ -1480,6 +1486,9 @@
             selectedTaskForProof = { id: taskId, title: title };
             document.getElementById('modal-task-title').textContent = title;
             document.getElementById('proof-input').value = '';
+            document.getElementById('proof-image-input').value = '';
+            document.getElementById('proof-image-status').textContent = '';
+            document.getElementById('submit-proof-button').disabled = false;
             document.getElementById('proof-modal').classList.remove('hidden');
             window.open(link, '_blank');
         }
@@ -1491,28 +1500,43 @@
 
         async function submitProof() {
             const proofText = document.getElementById('proof-input').value.trim();
-            if (!proofText) {
-                alert('يرجى كتابة إثبات التنفيذ أولاً!');
-                return;
+            const imageInput = document.getElementById('proof-image-input');
+            const imageFile = imageInput.files && imageInput.files[0];
+            const status = document.getElementById('proof-image-status');
+            const submitButton = document.getElementById('submit-proof-button');
+            if (!proofText) { alert('يرجى كتابة اليوزر أو رابط الصفحة أولاً!'); return; }
+            if (!imageFile) { alert('يرجى اختيار صورة شاشة للإثبات قبل الإرسال.'); imageInput.focus(); return; }
+            if (!currentUser || !selectedTaskForProof) return;
+            if (!['image/jpeg', 'image/png', 'image/webp'].includes(imageFile.type) || imageFile.size > 5 * 1024 * 1024) {
+                alert('اختر صورة JPG أو PNG أو WEBP بحجم لا يتجاوز 5 ميجابايت.'); return;
             }
-
-            const { error } = await supabaseClient
-                .from('task_submissions')
-                .insert([{
+            submitButton.disabled = true;
+            status.textContent = 'جاري رفع صورة الإثبات...';
+            let uploadedPath = null;
+            try {
+                const ext = imageFile.type === 'image/png' ? 'png' : (imageFile.type === 'image/webp' ? 'webp' : 'jpg');
+                const randomPart = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+                uploadedPath = `${currentUser.id}/${randomPart}.${ext}`;
+                const { error: uploadError } = await supabaseClient.storage.from('task-proofs').upload(uploadedPath, imageFile, { contentType: imageFile.type, upsert: false });
+                if (uploadError) throw uploadError;
+                status.textContent = 'تم رفع الصورة، جاري إرسال الإثبات...';
+                const { error: insertError } = await supabaseClient.from('task_submissions').insert([{
                     user_id: currentUser.id,
                     task_id: selectedTaskForProof.id,
                     user_email: currentUser.email,
                     task_title: selectedTaskForProof.title,
                     proof_text: proofText,
+                    proof_image_path: uploadedPath,
                     status: 'pending'
                 }]);
-
-            if (error) {
-                alert('حدث خطأ: ' + error.message);
-            } else {
-                alert('✅ تم إرسال إثبات المهمة بنجاح، بانتظار مراجعة الأدمن!');
+                if (insertError) throw insertError;
+                alert('✅ تم إرسال اليوزر وصورة الإثبات للأدمن بنجاح، بانتظار المراجعة!');
                 closeProofModal();
                 await loadTasks();
+            } catch (err) {
+                if (uploadedPath) await supabaseClient.storage.from('task-proofs').remove([uploadedPath]).catch(() => {});
+                status.textContent = 'تعذر إرسال الإثبات: ' + (err.message || err);
+                submitButton.disabled = false;
             }
         }
 
@@ -1710,17 +1734,32 @@
 
             if (subs && subs.length > 0) {
                 subsList.innerHTML = '';
-                subs.forEach(s => {
-                    const safeProof = s.proof_text.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                for (const s of subs) {
+                    const safeProof = escapeLeaderboardText(s.proof_text || '');
+                    const safeTitle = escapeLeaderboardText(s.task_title || 'مهمة');
+                    const safeEmail = escapeLeaderboardText(s.user_email || '');
+                    let proofImageLink = '<span class="text-[10px] text-gray-500">لم يرفق صورة</span>';
+                    if (s.proof_image_path) {
+                        const { data: signedData, error: signedError } = await supabaseClient.storage.from('task-proofs').createSignedUrl(s.proof_image_path, 300);
+                        if (!signedError && signedData && signedData.signedUrl) {
+                            proofImageLink = `<a href="${escapeLeaderboardText(signedData.signedUrl)}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 bg-sky-500/15 text-sky-300 border border-sky-400/30 text-xs font-bold px-3 py-2 rounded-lg">🖼️ فتح صورة الإثبات</a>`;
+                        } else {
+                            proofImageLink = '<span class="text-[10px] text-red-300">تعذر فتح الصورة؛ راجع صلاحيات التخزين</span>';
+                        }
+                    }
                     subsList.innerHTML += `
                         <div class="bg-gray-900 p-3 rounded-xl border border-gray-800 flex flex-col gap-2">
-                            <div class="flex justify-between items-center">
-                                <span class="text-[11px] font-bold text-emerald-400">${s.task_title || 'مهمة'}</span>
-                                <span class="text-[10px] text-gray-400">${s.user_email || ''}</span>
+                            <div class="flex justify-between items-center gap-2">
+                                <span class="text-[11px] font-bold text-emerald-400">${safeTitle}</span>
+                                <span class="text-[10px] text-gray-400">${safeEmail}</span>
                             </div>
-                            <div class="flex justify-between items-center bg-gray-950 p-2 rounded-lg">
-                                <p class="text-xs text-gray-300 truncate max-w-[200px]">الإثبات: <span class="text-amber-400 font-bold">${s.proof_text}</span></p>
-                                <button onclick="copyToClipboard('${safeProof}')" class="bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 text-[10px] font-bold px-3 py-1.5 rounded-lg transition cursor-pointer">📋 نسخ الإثبات</button>
+                            <div class="flex justify-between items-center bg-gray-950 p-2 rounded-lg gap-2" data-proof="${escapeLeaderboardText(s.proof_text || '')}">
+                                <p class="text-xs text-gray-300 break-all">اليوزر / الإثبات: <span class="text-amber-400 font-bold">${safeProof}</span></p>
+                                <button onclick="copyToClipboard(this.parentElement.dataset.proof)" class="shrink-0 bg-blue-500/20 text-blue-400 text-[10px] font-bold px-3 py-1.5 rounded-lg">📋 نسخ</button>
+                            </div>
+                            <div class="flex items-center justify-between gap-2 bg-gray-950 p-2 rounded-lg">
+                                <span class="text-xs text-gray-300">صورة شاشة الإثبات:</span>
+                                ${proofImageLink}
                             </div>
                             <div class="grid grid-cols-2 gap-2">
                                 <button onclick="approveSubmission(${s.id}, '${s.user_id}', ${s.task_id})" class="bg-emerald-500 hover:bg-emerald-600 text-black text-xs font-bold py-2 rounded-xl transition cursor-pointer">✅ الموافقة وإضافة الأرباح</button>
@@ -1728,7 +1767,7 @@
                             </div>
                         </div>
                     `;
-                });
+                }
             } else {
                 subsList.innerHTML = '<p class="text-xs text-gray-400 text-center py-2">لا توجد إثباتات معلقة</p>';
             }
